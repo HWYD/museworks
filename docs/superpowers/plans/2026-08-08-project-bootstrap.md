@@ -6,12 +6,13 @@
 
 **Architecture:** pnpm/Turbo 管理 Electron renderer、Electron main/preload 以及 Python service 三个独立交付单元。Renderer 只能调用 preload 暴露的窄接口；main 通过受控 HTTP 调用本地 FastAPI，未来流式接口一律保留给标准 SSE，不在此计划的 Bootstrap 中提前实现。每项任务独立通过 TDD 与提交后，才能作为下一项的输入。
 
-**Tech Stack:** Node 22.22.2、pnpm 10.33.2、Turbo 2.2.3、Electron 43.2.0、Electron Forge 7.11.2、React 19.2.4、TypeScript 5.9.3、ESLint 9.39.1、Prettier 3.7.3、Vitest 4.1.4、Python 3.12、uv、FastAPI、pytest。
+**Tech Stack:** Node 22.22.2、pnpm 10.33.2、Turbo 2.2.3、Electron 43.2.0、Electron Forge 7.11.2、Forge Vite plugin 7.11.2、Vite 7.3.6、@vitejs/plugin-react 5.2.0、React 19.2.4、TypeScript 5.9.3、ESLint 9.39.1、Prettier 3.7.3、Vitest 4.1.4、Python 3.12、uv、FastAPI、pytest。
 
 ## Global Constraints
 
 - Node 必须为 `22.22.2`，pnpm 必须为 `10.33.2`，Python 必须为 `3.12`。
-- Electron 必须为 `43.2.0`、Electron Forge 为 `7.11.2`、React 为 `19.2.4`、TypeScript 为 `5.9.3`、Turbo 为 `2.2.3`、ESLint 为 `9.39.1`、Prettier 为 `3.7.3`、Vitest 为 `4.1.4`；不以范围版本替代这些锁定版本。
+- Electron 必须为 `43.2.0`、Electron Forge 及所有 `@electron-forge/*` packages 为 `7.11.2`、`@electron-forge/plugin-vite` 为 `7.11.2`、Vite 为 `7.3.6`、`@vitejs/plugin-react` 为 `5.2.0`、React 为 `19.2.4`、TypeScript 为 `5.9.3`、Turbo 为 `2.2.3`、ESLint 为 `9.39.1`、Prettier 为 `3.7.3`、Vitest 为 `4.1.4`；不以范围版本替代这些锁定版本。
+- Electron 桌面构建只使用 Electron Forge + Vite，禁止 Webpack 工具链。Forge `7.11.2` 是稳定线，v8 仍为 alpha；Forge 官方 Vite plugin 标为 experimental，官方模板仍以 Vite `^5` 为基线，而 Vite 8 将迁移到 Rolldown。因此 MVP 固定成熟的 Vite `7.3.6`，并以精确锁版和 `start`、`build`、`package` 冒烟验证控制升级；仅在三个冒烟命令及 Windows/macOS CI matrix 均通过后，才可评估一次受控升级。
 - 固定调用方向为 `Renderer → Preload → Electron Main → FastAPI → Agent Runtime → Tool → ComfyUI Adapter`；不得跨层绕过。
 - Renderer 不可访问 Node、文件系统、环境变量、密钥、ComfyUI 或任意 HTTP 后端。
 - Electron 使用 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`，IPC 仅允许显式、类型化通道。
@@ -41,7 +42,12 @@
 ├── apps/
 │   ├── desktop/
 │   │   ├── package.json                 # Electron Forge/React 应用
-│   │   ├── forge.config.ts              # Forge 7.11.2 / Electron 43.2.0 配置
+│   │   ├── forge.config.ts              # Forge Vite 7.11.2 / Electron 43.2.0 配置
+│   │   ├── vite.main.config.ts          # Vite main-process bundle 配置
+│   │   ├── vite.preload.config.ts       # Vite preload bundle 配置
+│   │   ├── vite.renderer.config.ts      # Vite React renderer 配置
+│   │   ├── forge.env.d.ts               # Forge 注入的 Vite entrypoint 类型
+│   │   ├── index.html                   # Vite renderer HTML entrypoint
 │   │   ├── tsconfig.json                # desktop TypeScript 基线
 │   │   ├── tsconfig.build.json          # desktop 可发射的骨架构建配置
 │   │   ├── vitest.config.ts             # desktop test project 基线
@@ -143,7 +149,7 @@ Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言
 {
   "scripts": {
     "lint": "turbo run lint",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs apps packages scripts",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "build": "turbo run build",
@@ -153,9 +159,9 @@ Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言
 }
 ```
 
-创建根 `tsconfig.json`（`"strict": true`，并提供 desktop/contracts 继承的 Node 22 基线）、`eslint.config.mjs`、`.prettierrc.json`、`.prettierignore`、`.editorconfig` 与 `.npmrc`。ESLint flat config 必须组合 `@eslint/js`、`typescript-eslint` 和 `globals`，为 `.ts` / `.tsx` 配置 TypeScript parser 与 JSX 解析，并实际检查源码和测试；Prettier ignore 仅排除 `node_modules`、`dist`、`.turbo`、`.vite`、`out` 等依赖或构建目录，不排除源码、配置或测试；`.npmrc` 必须启用 `engine-strict=true` 与 `save-exact=true`。
+创建根 `tsconfig.json`（`"strict": true`，并提供 desktop/contracts 继承的 Node 22 基线）、`eslint.config.mjs`、`.prettierrc.json`、`.prettierignore`、`.editorconfig` 与 `.npmrc`。ESLint flat config 必须组合 `@eslint/js`、`typescript-eslint` 和 `globals`，为 `.ts` / `.tsx` 配置 TypeScript parser 与 JSX 解析，并实际检查源码和测试；`format:check` 只检查机器维护的 package、workspace、Turbo、TypeScript、ESLint、`apps`、`packages` 与 `scripts` 文件，不把既有治理 Markdown 纳入自动格式门禁。治理 Markdown 由任务提交前的人工可读性、链接与范围审查保障。Prettier ignore 仅排除 `node_modules`、`dist`、`.turbo`、`.vite`、`out` 等依赖或构建目录，不排除上述机器维护源码、配置或测试；`.npmrc` 必须启用 `engine-strict=true`、`save-exact=true` 与 Forge 官方 pnpm 要求的 `node-linker=hoisted`。根 `package.json` 还必须声明 `"pnpm": { "onlyBuiltDependencies": ["electron", "electron-winstaller"] }`，只允许这两个原生安装脚本在 install 时构建。
 
-创建最小 `apps/desktop` 与 `packages/contracts` manifests、继承根 strict 基线的 `tsconfig.json` / `tsconfig.build.json` 以及 desktop Vitest 配置，使 pnpm filter 在 Task 2 前已经匹配真实 workspace。`apps/desktop/package.json` 在 Task 1 一次性完成、Task 2 不得再修改：`dependencies` 必须精确包含 `react@19.2.4`、`react-dom@19.2.4`、`electron-squirrel-startup@1.0.1` 与 `@museworks/contracts@workspace:*`；`devDependencies` 必须精确包含 `electron@43.2.0`、`@electron-forge/cli@7.11.2`、`@electron-forge/plugin-webpack@7.11.2`、`@electron-forge/maker-squirrel@7.11.2`、`@electron-forge/maker-dmg@7.11.2`、`@electron-forge/shared-types@7.11.2`、`@electron/fuses@2.1.3`、`webpack@5.101.3`、`ts-loader@9.5.4`、`@types/node@22.20.1`、`@types/react@19.2.14`、`@types/react-dom@19.2.3`、`jsdom@29.0.2`、`@testing-library/react@16.3.2`。`packages/contracts/package.json` 的 `dependencies` 必须精确包含 `zod@4.3.6`，因为 `packages/contracts/src/ipc.ts` 直接导入它；contracts 不将 Zod 借由 desktop 间接提供。运行时依赖只放入 `dependencies`，构建、类型、测试与 Forge 工具只放入 `devDependencies`。desktop manifest 还必须预先声明 `"package": "electron-forge package"`。
+创建最小 `apps/desktop` 与 `packages/contracts` manifests、继承根 strict 基线的 `tsconfig.json` / `tsconfig.build.json` 以及 desktop Vitest 配置，使 pnpm filter 在 Task 2 前已经匹配真实 workspace。`apps/desktop/package.json` 的 `dependencies` 必须精确包含 `react@19.2.4`、`react-dom@19.2.4`、`electron-squirrel-startup@1.0.1` 与 `@museworks/contracts@workspace:*`；`devDependencies` 必须精确包含 `electron@43.2.0`、`@electron-forge/cli@7.11.2`、`@electron-forge/plugin-vite@7.11.2`、`@electron-forge/plugin-fuses@7.11.2`、`@electron-forge/maker-squirrel@7.11.2`、`@electron-forge/maker-dmg@7.11.2`、`@electron-forge/shared-types@7.11.2`、`@electron/fuses@1.8.0`、`vite@7.3.6`、`@vitejs/plugin-react@5.2.0`、`@types/node@22.20.1`、`@types/react@19.2.14`、`@types/react-dom@19.2.3`、`jsdom@29.0.2`、`@testing-library/react@16.3.2`；不得列出任何 Webpack 工具链 package。`@electron/fuses@1.8.0` 是 plugin-fuses `7.11.2` 所要求 `^1.0.0` peer 范围内的最新 1.x，必须精确锁定，不能升级到不兼容的 2.x。`packages/contracts/package.json` 的 `dependencies` 必须精确包含 `zod@4.3.6`，因为 `packages/contracts/src/ipc.ts` 直接导入它；contracts 不将 Zod 借由 desktop 间接提供。运行时依赖只放入 `dependencies`，构建、类型、测试与 Forge/Vite 工具只放入 `devDependencies`。Task 1 的 desktop manifest 必须设置 `"main": ".vite/build/main.js"`，scripts 保持 `"build": "tsc -p tsconfig.build.json"`，并预先声明 `"start": "electron-forge start"` 与 `"package": "electron-forge package"`；因为 Task 1 只有 TypeScript 骨架，不能让 build 引用 Task 2 才创建的 Vite 配置。
 
 两个 workspace 都必须提供实际的 `lint`、`typecheck`、`test`、`build`、`check` 脚本。pnpm 运行 workspace script 时，其 PATH 包含 root 锁定工具的 binary，但命令 cwd 保持为 package；因此脚本必须直接使用 package 相对路径：`lint` 为 `eslint src tests --max-warnings=0`，`typecheck` 为 `tsc --noEmit -p tsconfig.json`，`test` 为 `vitest run`，`build` 为 `tsc -p tsconfig.build.json`，`check` 顺序运行前四者。不得使用 `pnpm --workspace-root exec`，以免 cwd 错误地变为仓库根。Task 1 必须在 desktop 与 contracts 都创建可编译的最小 `src` 入口和一个断言其公开常量的 Vitest scaffold 测试；所以每个 `src`、`tests` 路径都真实存在，`pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 和 `pnpm check` 在仅有骨架时都验证真实源文件、测试或 TypeScript 发射产物，且不会因 filter miss、缺失测试路径或空成功掩盖问题。
 
@@ -184,17 +190,24 @@ git commit -m "chore: bootstrap pnpm turbo workspace"
 ### Task 2: contracts 与安全 Electron/React 壳
 
 **Files:**
+- Modify: `apps/desktop/package.json`
 - Create: `apps/desktop/forge.config.ts`
+- Create: `apps/desktop/vite.main.config.ts`
+- Create: `apps/desktop/vite.preload.config.ts`
+- Create: `apps/desktop/vite.renderer.config.ts`
+- Create: `apps/desktop/forge.env.d.ts`
+- Create: `apps/desktop/index.html`
 - Create: `apps/desktop/src/main/index.ts`
 - Create: `apps/desktop/src/preload/index.ts`
 - Create: `apps/desktop/src/renderer/main.tsx`
 - Create: `apps/desktop/src/renderer/app.tsx`
 - Create: `apps/desktop/tests/preload.test.ts`
 - Create: `apps/desktop/tests/main-security.test.ts`
+- Create: `apps/desktop/tests/forge-vite-config.test.ts`
 - Create: `packages/contracts/src/ipc.ts`
 
 **Interfaces:**
-- Consumes: Task 1 的 Node 22.22.2/pnpm workspace、已锁定的 desktop manifest 与 `turbo run check`。本任务只实现 contracts、Forge 配置和应用源码，不修改任何 package manifest。
+- Consumes: Task 1 的 Node 22.22.2/pnpm workspace、已锁定的 Vite/Forge desktop dependencies 与 `turbo run check`。本任务实现 contracts、Forge Vite 配置和应用源码，并仅将 desktop 的 `build` script 从 Task 1 的 TypeScript 骨架构建改为 `electron-forge package`；不改变已锁定依赖。
 - Produces: `window.museworks.app.getInfo(): Promise<{ appVersion: string; platform: "win32" | "darwin"; arch: "x64" | "arm64" }>`；`getInfo` 的 IPC 请求只能由 preload 调用。`packages/contracts` 在本轮仅承载 Electron IPC 的 Zod schema、类型和数字 protocol version；FastAPI HTTP 的 Pydantic/OpenAPI 合约生成留给下一阶段，不在两个 workspace 重复手写 DTO。
 
 - [ ] **Step 1: 写出 preload bridge 的失败测试**
@@ -210,10 +223,12 @@ it('exposes only app.getInfo', async () => {
 });
 ```
 
+同时在 `forge-vite-config.test.ts` 写出失败测试：导入 `forge.config.ts` 与三个 `vite.*.config.ts`，断言三个配置模块可加载；断言 Forge plugins 恰为一个 `@electron-forge/plugin-vite` 与一个 `@electron-forge/plugin-fuses`，Vite plugin 的 `concurrent` 为 `false`、其 build entries 分别指向 `src/main/index.ts` 和 `src/preload/index.ts`、renderer entry 指向 `index.html`。读取 `vite.renderer.config.ts` 的源码并断言它导入 `@vitejs/plugin-react`，而不对 React plugin 的内部对象形状作脆弱断言；断言 fuses 配置关闭 RunAsNode、NodeOptions 与 CliInspect，启用 CookieEncryption、ASAR integrity 与 OnlyLoadAppFromAsar。这些断言固定 Vite 构建、内存控制和 Electron 安全熔丝契约，不测试 Electron 运行时。
+
 - [ ] **Step 2: 运行测试确认 red**
 
-Run: `pnpm --filter @museworks/desktop --fail-if-no-match test -- tests/preload.test.ts`
-Expected: FAIL；filter 必须匹配 Task 1 创建的 desktop workspace，测试因 `createMuseworksApi` 或 contracts 实现尚不存在而失败，不得以 `No projects found` 作为 red。
+Run: `pnpm --filter @museworks/desktop --fail-if-no-match test -- tests/preload.test.ts tests/forge-vite-config.test.ts`
+Expected: FAIL；filter 必须匹配 Task 1 创建的 desktop workspace，测试因 `createMuseworksApi`、Forge Vite 配置或 contracts 实现尚不存在而失败，不得以 `No projects found` 作为 red。
 
 - [ ] **Step 3: 最小实现安全边界和 UI**
 
@@ -234,7 +249,11 @@ export function createMuseworksApi(ipcRenderer: Pick<Electron.IpcRenderer, 'invo
 }
 ```
 
-使用 Task 1 已建立的 `@museworks/contracts` workspace、TypeScript 配置和 `"@museworks/contracts": "workspace:*"` 依赖。在 `main/index.ts` 用 `narrowPlatform(value: string): AppInfo['platform']` 与 `narrowArch(value: string): AppInfo['arch']` 显式窄化 `process.platform`、`process.arch`，不受支持的值必须抛错；再由 `ipcMain.handle(IPC_GET_APP_INFO, ...)` 结合 `appInfoSchema` 校验 `app.getVersion()` 与窄化后的值并返回，不能将宽泛的 Node 运行时字符串泄露给 renderer。创建 `BrowserWindow` 时固定 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。renderer 仅调用 `window.museworks.app.getInfo()` 并渲染结果，不调用 HTTP、Node 或环境变量。
+使用 Task 1 已建立的 `@museworks/contracts` workspace、TypeScript 配置和 `"@museworks/contracts": "workspace:*"` 依赖。在 `forge.config.ts` 配置唯一的 `@electron-forge/plugin-vite`：`concurrent: false` 控制 main、preload 与 renderer 多 target 构建的峰值内存；main entry 是 `src/main/index.ts` / `vite.main.config.ts`，preload entry 是 `src/preload/index.ts` / `vite.preload.config.ts`，renderer entry 是 `index.html` / `vite.renderer.config.ts`。三个 Vite 配置均以 Node 目标处理 main/preload，以 React plugin 处理 renderer；`forge.env.d.ts` 声明 Forge 注入的 renderer Vite server URL 与 name 常量，`main/index.ts` 仅通过这些受类型约束的常量加载 renderer。
+
+同时配置 `@electron-forge/plugin-fuses` 与 `@electron/fuses` 的 V1 options：`RunAsNode: false`、`EnableCookieEncryption: true`、`EnableNodeOptionsEnvironmentVariable: false`、`EnableNodeCliInspectArguments: false`、`EnableEmbeddedAsarIntegrityValidation: true`、`OnlyLoadAppFromAsar: true`。这样 Task 1 声明的 `@electron/fuses` 有实际生产配置路径，且 package smoke 会验证其可由 Forge 使用。不得引入或保留任何 Webpack loader、plugin 或配置。
+
+在 `main/index.ts` 用 `narrowPlatform(value: string): AppInfo['platform']` 与 `narrowArch(value: string): AppInfo['arch']` 显式窄化 `process.platform`、`process.arch`，不受支持的值必须抛错；再由 `ipcMain.handle(IPC_GET_APP_INFO, ...)` 结合 `appInfoSchema` 校验 `app.getVersion()` 与窄化后的值并返回，不能将宽泛的 Node 运行时字符串泄露给 renderer。创建 `BrowserWindow` 时固定 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。renderer 仅调用 `window.museworks.app.getInfo()` 并渲染结果，不调用 HTTP、Node 或环境变量。
 
 - [ ] **Step 4: 增加 main 安全选项测试并运行 green**
 
@@ -248,8 +267,14 @@ expect(() => createAppInfo('0.0.0', 'linux', 'x64')).toThrow(/unsupported platfo
 expect(() => createAppInfo('0.0.0', 'win32', 'ia32')).toThrow(/unsupported architecture/);
 ```
 
-Run: `pnpm --filter @museworks/desktop --fail-if-no-match test -- tests/preload.test.ts tests/main-security.test.ts`
-Expected: PASS；两项测试均通过。
+Run: `pnpm --filter @museworks/desktop --fail-if-no-match test -- tests/preload.test.ts tests/main-security.test.ts tests/forge-vite-config.test.ts`
+Expected: PASS；bridge、安全选项和 Forge Vite 配置测试均通过。
+
+Run: `pnpm --filter @museworks/desktop --fail-if-no-match start`
+Expected: Vite 开发服务器与安全桌面窗口启动；人工确认 app info 壳页面渲染后关闭窗口，命令以退出码 `0` 结束。
+
+Run: `pnpm --filter @museworks/desktop --fail-if-no-match package`
+Expected: Electron Forge 通过 plugin-vite 构建 main、preload 与 renderer 三个 targets，并以退出码 `0` 完成 package；产物不加入 Git。此时将 `apps/desktop/package.json` 的 `build` script 改为 `electron-forge package`，所以随后 root `pnpm build` 使用 Forge 调用 Vite，而不直接逐个调用 Vite config。
 
 - [ ] **Step 5: 提交 Task 2**
 
@@ -408,7 +433,8 @@ git commit -m "ci: verify bootstrap boundaries"
 
 - [ ] 运行 `pnpm install --frozen-lockfile`；预期 lockfile 不变化且两个 Node workspace 被识别。
 - [ ] 运行 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries`；预期根级工具链、Turbo 任务图、scaffold 测试、构建和 TypeScript AST 边界扫描均以退出码 `0` 完成。
-- [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match package`；预期 Electron Forge package smoke 以退出码 `0` 完成，产物不纳入 Git。
+- [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match start`；人工确认 Vite 开发服务器、受 sandbox 保护的桌面窗口和 app-info 壳页面均可用后关闭窗口，预期退出码为 `0`。
+- [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match build && pnpm --filter @museworks/desktop --fail-if-no-match package`；预期 Vite main/preload/renderer targets 与 Electron Forge package smoke 均以退出码 `0` 完成，产物不纳入 Git。
 - [ ] 运行 `uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`；预期 health 契约测试通过。
 - [ ] 运行 `node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs`；预期 CI matrix、禁止发布约束与边界 AST 测试均通过。
 - [ ] 真正的合并与跨平台完成门禁是 GitHub Actions 的 `windows-2025` / `x64` 与 `macos-15` / `arm64` matrix jobs 实际成功，且两个 job 都完成 Node、Python 与原生 Forge package smoke；仅有 workflow 静态测试或本机 Windows package 时，不得宣称跨平台完成。
