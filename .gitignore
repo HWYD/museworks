@@ -63,6 +63,11 @@ temp/
 *.vae
 
 # Scoped ComfyUI local runtime, models, caches and output
+ComfyUI/
+comfyui/
+comfyui-runtime/
+comfyui-models/
+comfyui-output/
 .museworks-runtime/comfyui/models/
 .museworks-runtime/comfyui/input/
 .museworks-runtime/comfyui/output/
