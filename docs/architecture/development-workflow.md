@@ -14,12 +14,23 @@ pnpm typecheck
 pnpm test
 pnpm check
 pnpm verify:boundaries
+pnpm verify:skills
 uv run --project apps/agent-service --group test --locked pytest apps/agent-service/tests -q
 pnpm --filter @museworks/desktop --fail-if-no-match start
 pnpm --filter @museworks/desktop --fail-if-no-match package
 ```
 
 Electron Forge + Vite 是唯一桌面构建路径，不添加 Webpack 源码、配置或直接依赖。Windows x64 的 GUI/package 已本地验证；macOS arm64 必须以 GitHub Actions 的原生 job 成功为准，目前未验证。
+
+## Skill 路由
+
+Superpowers 是唯一开发流程主干。每个任务在 `using-superpowers` 后使用 `museworks-best-practices-router`，输入变更路径、意图和 L0-L3 等级，只加载返回的 required Skill；optional 只在对应条件成立时加载，forbidden 不得加载。
+
+```powershell
+node .agents/skills/museworks-best-practices-router/scripts/route-skills.mjs --level L2 --intent "SSE cancellation" apps/agent-service/src/museworks_agent/routes/run.py
+```
+
+项目约束和锁定版本始终覆盖上游通用建议。L2/L3 在实现证据就绪后进入独立代码审查；L3 必须先批准设计和实施计划。完整来源、状态与更新流程见 `skill-governance.md` 和 `.agents/skills-manifest.yaml`。
 
 ## 变更原则
 

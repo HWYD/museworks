@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Museworks Best Practices Router'
+  short_description: 'Route tasks to audited project guidance'
+  default_prompt: 'Route this task to only the required audited Museworks skills.'

@@ -46,6 +46,19 @@
 规则：完成前使用 verification-before-completion。
 规则：合并前使用 requesting-code-review。
 
+## 最佳实践 Skill 路由
+
+规则：每个仓库任务在 using-superpowers 后使用 `museworks-best-practices-router`，根据意图、路径和 Change Level 只加载相关 Skill。
+规则：Skill 冲突优先级是用户明确决定、项目 AGENTS/规则/ADR、仓库锁定版本、项目 Skill、已启用上游 Skill。
+规则：上游 Skill 只提供领域知识，不得替代 Superpowers 的 brainstorming、计划、worktree、TDD、调试、审查或完成验证。
+规则：外部 Skill 的来源、固定 commit、触发范围、覆盖项、禁用建议和审核状态记录在 `.agents/skills-manifest.yaml`。
+规则：状态为 quarantined 或 rejected 的 Skill 不得加载、安装到活动目录或用浮动分支替代。
+规则：不得因 Skill 建议擅自升级 React、Electron、Forge、Vite、FastAPI、pnpm、Turbo、Vitest 或改变 hoisted Forge 布局。
+规则：L2/L3 必须执行独立代码审查；L3 在设计和实施计划批准后才能编码。
+规则：Electron Main、Preload、IPC、Forge/Vite 配置或原生打包改动必须加载 `museworks-electron-best-practices`；社区 Electron Skill 不能覆盖项目安全边界。
+规则：Vitest 测试不加载第三方通用测试 Skill；RED/GREEN 由 Superpowers TDD 负责。
+规则：Skill 更新遵循隔离审计、路由回归、独立审查、更新固定 SHA 的顺序，不跟随 `main` 自动升级。
+
 ## Change Level
 
 规则：L0 是文档、ADR、计划、忽略规则或注释。

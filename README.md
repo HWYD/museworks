@@ -9,6 +9,7 @@ Museworks 当前是一个可运行、可测试的本地优先桌面生图 Agent 
 - Electron Main 固定启用 `contextIsolation` 与 `sandbox`，并关闭 `nodeIntegration`。
 - FastAPI `/v1/health` 返回版本化的服务状态。
 - pnpm/Turbo、ESLint、Prettier、Vitest、pytest 和 Renderer 边界扫描。
+- Superpowers 主流程、项目级 Skill 路由、固定 SHA 的上游 Skill 清单和路由回归门禁。
 - Electron Forge + Vite 是唯一桌面构建路径。项目源码、配置和直接依赖不使用 Webpack；Forge CLI 可能携带未使用的模板传递依赖。
 
 当前没有 `/v1/run`、图像生成、Ark 调用、Deep Agents 运行时、ComfyUI 适配器、模型下载、密钥界面或流式端点。
@@ -45,9 +46,16 @@ pnpm test
 pnpm build
 pnpm check
 pnpm verify:boundaries
-node --test scripts/ci-workflow.test.mjs scripts/verify-packaged-asar.test.mjs scripts/verify-boundaries.test.mjs scripts/workspace-config.test.mjs
+pnpm verify:skills
+node --test scripts/*.test.mjs
 uv run --project apps/agent-service --group test --locked pytest apps/agent-service/tests -q
 ```
+
+## 开发 Skill 治理
+
+Superpowers 是唯一开发流程主干。每个任务先由仓库内的 `museworks-best-practices-router` 按路径、意图和 Change Level 选择最小领域 Skill 集合；Electron 安全与打包由项目 Skill 固化，L2/L3 保留独立代码审查。外部 Skill 的固定来源、审核状态和项目覆盖规则见 `.agents/skills-manifest.yaml`，详细流程见 `docs/architecture/skill-governance.md`。
+
+当前已启用的上游知识 Skill 是 React Best Practices、Composition Patterns、FastAPI、Turborepo 和 Python Testing Patterns。Web Design 候选因使用时隐式拉取浮动规则而隔离，pnpm 候选因混入 v11 且与当前 pnpm 10 配置冲突而拒绝，OpenAI Security 候选仍在隔离审查；它们不会被路由器加载。
 
 生成本机 Electron package：
 

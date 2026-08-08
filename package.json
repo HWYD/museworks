@@ -14,12 +14,13 @@
   },
   "scripts": {
     "lint": "turbo run lint",
-    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json \"apps/desktop/**/*.{json,ts,tsx,css,html}\" \"packages/**/*.{json,ts,tsx}\" \"scripts/**/*.{js,mjs,ts}\" \".github/workflows/**/*.{yml,yaml}\"",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json AGENTS.md \".agents/**/*.{md,yaml,yml}\" \"apps/desktop/**/*.{json,ts,tsx,css,html}\" \"packages/**/*.{json,ts,tsx}\" \"scripts/**/*.{js,mjs,ts}\" \".github/workflows/**/*.{yml,yaml}\" README.md docs/architecture/development-workflow.md docs/architecture/skill-governance.md",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "build": "turbo run build",
-    "check": "turbo run check && pnpm verify:boundaries",
-    "verify:boundaries": "node scripts/verify-boundaries.mjs"
+    "check": "turbo run check && pnpm verify:boundaries && pnpm verify:skills",
+    "verify:boundaries": "node scripts/verify-boundaries.mjs",
+    "verify:skills": "node scripts/verify-skill-governance.mjs"
   },
   "devDependencies": {
     "@electron-forge/cli": "7.11.2",

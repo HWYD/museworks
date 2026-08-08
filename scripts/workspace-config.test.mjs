@@ -36,7 +36,19 @@ test('enforces workspace package-manager and dot-config policy', () => {
   assert.deepEqual(manifest.pnpm?.onlyBuiltDependencies, ['electron', 'electron-winstaller']);
   assert.equal(
     manifest.scripts['format:check'],
-    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json "apps/desktop/**/*.{json,ts,tsx,css,html}" "packages/**/*.{json,ts,tsx}" "scripts/**/*.{js,mjs,ts}" ".github/workflows/**/*.{yml,yaml}"',
+    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json AGENTS.md ".agents/**/*.{md,yaml,yml}" "apps/desktop/**/*.{json,ts,tsx,css,html}" "packages/**/*.{json,ts,tsx}" "scripts/**/*.{js,mjs,ts}" ".github/workflows/**/*.{yml,yaml}" README.md docs/architecture/development-workflow.md docs/architecture/skill-governance.md',
+  );
+  const prettierConfig = JSON.parse(readText('.prettierrc.json'));
+  assert.deepEqual(prettierConfig.overrides, [
+    {
+      files: '.agents/skills-manifest.yaml',
+      options: { parser: 'json' },
+    },
+  ]);
+  assert.equal(manifest.scripts['verify:skills'], 'node scripts/verify-skill-governance.mjs');
+  assert.equal(
+    manifest.scripts.check,
+    'turbo run check && pnpm verify:boundaries && pnpm verify:skills',
   );
 });
 

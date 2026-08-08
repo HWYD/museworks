@@ -58,6 +58,7 @@ test('runs the bootstrap gates on the approved native CI matrix', () => {
     'pnpm build',
     'pnpm check',
     'pnpm verify:boundaries',
+    'pnpm verify:skills',
   ]) {
     assert.match(workflow, new RegExp(command.replace(':', '\\:')));
   }
