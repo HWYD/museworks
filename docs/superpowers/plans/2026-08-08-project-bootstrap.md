@@ -6,12 +6,12 @@
 
 **Architecture:** pnpm/Turbo 管理 Electron renderer、Electron main/preload 以及 Python service 三个独立交付单元。Renderer 只能调用 preload 暴露的窄接口；main 通过受控 HTTP 调用本地 FastAPI，未来流式接口一律保留给标准 SSE，不在此计划的 Bootstrap 中提前实现。每项任务独立通过 TDD 与提交后，才能作为下一项的输入。
 
-**Tech Stack:** Node 22.22.2、pnpm 10.33.2、Turbo、Electron 43.2.0、Electron Forge 7.11.2、React 19.2.4、TypeScript 5.9.3、Python 3.12、uv、FastAPI、pytest。
+**Tech Stack:** Node 22.22.2、pnpm 10.33.2、Turbo 2.2.3、Electron 43.2.0、Electron Forge 7.11.2、React 19.2.4、TypeScript 5.9.3、ESLint 9.39.1、Prettier 3.7.3、Vitest 4.1.4、Python 3.12、uv、FastAPI、pytest。
 
 ## Global Constraints
 
 - Node 必须为 `22.22.2`，pnpm 必须为 `10.33.2`，Python 必须为 `3.12`。
-- Electron 必须为 `43.2.0`、Electron Forge 为 `7.11.2`、React 为 `19.2.4`、TypeScript 为 `5.9.3`；不以范围版本替代这些锁定版本。
+- Electron 必须为 `43.2.0`、Electron Forge 为 `7.11.2`、React 为 `19.2.4`、TypeScript 为 `5.9.3`、Turbo 为 `2.2.3`、ESLint 为 `9.39.1`、Prettier 为 `3.7.3`、Vitest 为 `4.1.4`；不以范围版本替代这些锁定版本。
 - 固定调用方向为 `Renderer → Preload → Electron Main → FastAPI → Agent Runtime → Tool → ComfyUI Adapter`；不得跨层绕过。
 - Renderer 不可访问 Node、文件系统、环境变量、密钥、ComfyUI 或任意 HTTP 后端。
 - Electron 使用 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`，IPC 仅允许显式、类型化通道。
@@ -32,12 +32,20 @@
 ├── pnpm-workspace.yaml                  # Node workspace 边界
 ├── pnpm-lock.yaml                       # pnpm 10.33.2 可复现依赖锁
 ├── turbo.json                           # 构建与验证任务图
+├── tsconfig.json                         # strict 的共享 TypeScript 基线
+├── eslint.config.mjs                     # 根级 ESLint 9 flat config
+├── .prettierrc.json                      # 根级 Prettier 规则
+├── .prettierignore                       # 不格式化依赖和构建产物
+├── .editorconfig                         # 跨编辑器文本约定
+├── .npmrc                                # pnpm 工作区安全、可复现设置
 ├── apps/
 │   ├── desktop/
 │   │   ├── package.json                 # Electron Forge/React 应用
 │   │   ├── forge.config.ts              # Forge 7.11.2 / Electron 43.2.0 配置
 │   │   ├── tsconfig.json                # desktop TypeScript 基线
+│   │   ├── tsconfig.build.json          # desktop 可发射的骨架构建配置
 │   │   ├── vitest.config.ts             # desktop test project 基线
+│   │   ├── src/renderer/placeholder.ts  # Task 1 可编译的 renderer 骨架
 │   │   ├── src/main/index.ts            # 安全 BrowserWindow 与 IPC handler
 │   │   ├── src/preload/index.ts         # 受限 contextBridge API
 │   │   ├── src/renderer/main.tsx        # React 19.2.4 入口
@@ -53,6 +61,8 @@
 │   └── contracts/
 │       ├── package.json                 # 仅 Electron IPC contracts workspace
 │       ├── tsconfig.json                # contracts TypeScript 构建配置
+│       ├── tsconfig.build.json          # contracts 可发射的骨架构建配置
+│       ├── src/index.ts                 # Task 1 可编译的 package 入口
 │       └── src/ipc.ts                   # Zod schema、类型与 protocol version
 ├── scripts/ci-workflow.test.mjs         # CI 版本与关键命令静态测试
 └── .github/workflows/ci.yml             # Node/Python 边界验证
@@ -65,12 +75,24 @@
 - Create: `pnpm-workspace.yaml`
 - Create: `pnpm-lock.yaml`
 - Create: `turbo.json`
+- Create: `tsconfig.json`
+- Create: `eslint.config.mjs`
+- Create: `.prettierrc.json`
+- Create: `.prettierignore`
+- Create: `.editorconfig`
+- Create: `.npmrc`
 - Create: `.node-version`
 - Create: `apps/desktop/package.json`
 - Create: `apps/desktop/tsconfig.json`
+- Create: `apps/desktop/tsconfig.build.json`
 - Create: `apps/desktop/vitest.config.ts`
+- Create: `apps/desktop/src/renderer/placeholder.ts`
+- Create: `apps/desktop/tests/scaffold.test.ts`
 - Create: `packages/contracts/package.json`
 - Create: `packages/contracts/tsconfig.json`
+- Create: `packages/contracts/tsconfig.build.json`
+- Create: `packages/contracts/src/index.ts`
+- Create: `packages/contracts/tests/scaffold.test.ts`
 - Create: `scripts/verify-boundaries.mjs`
 - Create: `scripts/verify-boundaries.test.mjs`
 
@@ -115,7 +137,27 @@ Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言
 - renderer 中直接调用标识符 `fetch(...)`，或调用 `axios.<method>(...)`，统一抛出 `renderer must not call network APIs`。
 - 仅扫描规范化路径包含 `/renderer/` 的 `.ts`/`.tsx`，并遍历嵌套语法节点。
 
-在根 `package.json` 设定 `"packageManager": "pnpm@10.33.2"`、`"engines": { "node": "22.22.2" }`。创建最小 `apps/desktop` 与 `packages/contracts` package manifests、TypeScript 配置及 desktop Vitest 配置，使 pnpm filter 在 Task 2 写入测试前已经能匹配项目；desktop manifest 预先声明 `"@museworks/contracts": "workspace:*"`。让 `verify:boundaries` 递归读取 `apps/**/src/renderer/**/*.{ts,tsx}` 后逐一调用 `validateSource`，并将 `test:boundaries` 和 `verify:boundaries` 接到 `turbo.json` 的 `check` 任务。
+在根 `package.json` 固定 `"packageManager": "pnpm@10.33.2"`、`"engines": { "node": "22.22.2" }`，并将 `typescript@5.9.3`、`turbo@2.2.3`、`eslint@9.39.1`、`prettier@3.7.3` 与 `vitest@4.1.4` 作为精确版本的 root devDependencies。根脚本必须是下列实际聚合入口，不能以空命令、缺失 workspace filter 或恒真脚本取得成功：
+
+```json
+{
+  "scripts": {
+    "lint": "turbo run lint",
+    "format:check": "prettier --check .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "build": "turbo run build",
+    "check": "turbo run check && pnpm verify:boundaries",
+    "verify:boundaries": "node scripts/verify-boundaries.mjs"
+  }
+}
+```
+
+创建根 `tsconfig.json`（`"strict": true`，并提供 desktop/contracts 继承的 Node 22 基线）、`eslint.config.mjs`、`.prettierrc.json`、`.prettierignore`、`.editorconfig` 与 `.npmrc`。ESLint flat config 必须实际检查 `.ts`/`.tsx`；Prettier ignore 仅排除 `node_modules`、`dist`、`.turbo`、`.vite`、`out` 等依赖或构建目录，不排除源码、配置或测试；`.npmrc` 必须启用 `engine-strict=true` 与 `save-exact=true`。
+
+创建最小 `apps/desktop` 与 `packages/contracts` manifests、继承根 strict 基线的 `tsconfig.json` / `tsconfig.build.json` 以及 desktop Vitest 配置，使 pnpm filter 在 Task 2 前已经匹配真实 workspace；desktop manifest 预先声明 `"@museworks/contracts": "workspace:*"` 和 `"package": "electron-forge package"`。两个 workspace 都必须提供实际的 `lint`、`typecheck`、`test`、`build`、`check` 脚本：`lint` 检查各自 `src` 与 `tests`，`typecheck` 运行 `tsc --noEmit -p tsconfig.json`，`test` 运行 `vitest run`，`build` 运行 `tsc -p tsconfig.build.json`，`check` 顺序运行前四者。Task 1 同时写入可编译的最小 `src` 入口、一个断言其公开常量的 Vitest scaffold 测试；因此 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 和 `pnpm check` 在仅有骨架时都验证真实源文件、测试或发射产物，且不会因 filter miss 或空成功掩盖问题。
+
+`turbo.json` 使用单一任务图：`lint` 声明 `dependsOn: ["^lint"]`，`typecheck` 声明 `dependsOn: ["^typecheck"]`，`test` 声明 `dependsOn: ["^test"]`，`build` 声明 `dependsOn: ["^build"]` 且输出为每个 workspace 的 `dist/**`；`check` 依赖本包的 `lint`、`typecheck`、`test`、`build`，所有非构建任务显式 `outputs: []`。让 `verify:boundaries` 递归读取 `apps/**/src/renderer/**/*.{ts,tsx}` 后逐一调用 `validateSource`；根 `check` 在 Turbo 检查完成后再执行该扫描器，保证边界校验不被遗漏。
 
 - [ ] **Step 4: 生成并冻结依赖锁**
 
@@ -127,13 +169,13 @@ Expected: PASS；锁文件与所有 manifests 一致，不发生 lockfile 更新
 
 - [ ] **Step 5: 运行 green 与工作区验证**
 
-Run: `node --test scripts/verify-boundaries.test.mjs && pnpm verify:boundaries`
-Expected: PASS；六类禁止项和负例均通过，命令退出码为 `0`。
+Run: `node --test scripts/verify-boundaries.test.mjs && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries`
+Expected: PASS；六类禁止项和负例均通过；每个根命令实际执行两个 workspace 的源文件、scaffold 测试或 TypeScript 发射，命令退出码均为 `0`。
 
 - [ ] **Step 6: 提交 Task 1**
 
 ```bash
-git add package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json .node-version apps/desktop/package.json apps/desktop/tsconfig.json apps/desktop/vitest.config.ts packages/contracts/package.json packages/contracts/tsconfig.json scripts
+git add package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json .prettierignore .editorconfig .npmrc .node-version apps/desktop packages/contracts scripts
 git commit -m "chore: bootstrap pnpm turbo workspace"
 ```
 
@@ -294,7 +336,7 @@ git commit -m "feat: add agent health service"
 
 **Interfaces:**
 - Consumes: Task 1 的 `pnpm verify:boundaries`，Task 2 的 desktop test 命令，Task 3 的 `uv run --project apps/agent-service pytest`。
-- Produces: 对 pull request 和 main push 执行 Node 22.22.2/pnpm 10.33.2 与 Python 3.12 验证的 GitHub Actions；README 仅描述当前 bootstrap 能力和非目标。
+- Produces: 对 pull request 和 main push 在 Windows x64 与 macOS arm64 上执行 Node 22.22.2/pnpm 10.33.2 与 Python 3.12 验证、并原生运行 Electron Forge package smoke 的 GitHub Actions；README 仅描述当前 bootstrap 能力和非目标。
 
 - [ ] **Step 1: 写出失败的 CI 配置静态测试**
 
@@ -306,6 +348,12 @@ const workflow = fs.readFileSync('.github/workflows/ci.yml', 'utf8');
 assert.match(workflow, /node-version: 22\.22\.2/);
 assert.match(workflow, /python-version: '3\.12'/);
 assert.match(workflow, /pnpm verify:boundaries/);
+assert.match(workflow, /windows-2025/);
+assert.match(workflow, /macos-15/);
+assert.match(workflow, /arch:\s*x64/);
+assert.match(workflow, /arch:\s*arm64/);
+assert.match(workflow, /pnpm --filter @museworks\/desktop --fail-if-no-match package/);
+assert.doesNotMatch(workflow, /upload-artifact|release|publish/);
 ```
 
 - [ ] **Step 2: 运行测试确认 red**
@@ -316,18 +364,27 @@ Expected: FAIL，原因是 `.github/workflows/ci.yml` 尚不存在。
 - [ ] **Step 3: 最小实现 CI 与范围准确的文档**
 
 ```yaml
-- uses: actions/setup-node@v4
-  with:
-    node-version: 22.22.2
-- run: corepack enable && corepack prepare pnpm@10.33.2 --activate
-- run: pnpm verify:boundaries
+strategy:
+  fail-fast: false
+  matrix:
+    include:
+      - runner: windows-2025
+        arch: x64
+      - runner: macos-15
+        arch: arm64
+runs-on: ${{ matrix.runner }}
 ```
 
-添加 Python 3.12 job，依次运行 Task 3 的 pytest；Node job 先运行 `pnpm install --frozen-lockfile`，再运行边界检查和 desktop tests。README 与架构文档必须说明当前仅有 app-info/health 骨架，未提供生成、Ark、ComfyUI 或 SSE run 能力。
+在这个单一 matrix job 的每个原生 OS 上都执行 `actions/setup-node@v4`（Node `22.22.2`）、`corepack enable`、`corepack prepare pnpm@10.33.2 --activate`、`pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm format:check`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm check` 与 `pnpm verify:boundaries`；再执行 `actions/setup-python@v5`（Python `3.12`）、`astral-sh/setup-uv@v7` 和 `uv run --project apps/agent-service pytest apps/agent-service/tests -q`。在 package 前用 Node 断言 `process.arch` 等于 `${{ matrix.arch }}`，然后执行 `pnpm --filter @museworks/desktop --fail-if-no-match package`。该 Forge package smoke 必须分别在 Windows x64 和 macOS arm64 runner 上原生完成；CI 不得包含 `upload-artifact`、签名、release 或 publish 步骤，生成物仅在 job 生命周期内使用。README 与架构文档必须说明当前仅有 app-info/health 骨架，未提供生成、Ark、ComfyUI 或 SSE run 能力。
+
+```yaml
+- run: node -e "if (process.arch !== '${{ matrix.arch }}') { throw new Error('unexpected architecture: ' + process.arch); }"
+- run: pnpm --filter @museworks/desktop --fail-if-no-match package
+```
 
 - [ ] **Step 4: 运行全量 green 验证**
 
-Run: `pnpm install --frozen-lockfile && node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm verify:boundaries && pnpm --filter @museworks/desktop --fail-if-no-match test && uv run --project apps/agent-service pytest apps/agent-service/tests -q`
+Run: `pnpm install --frozen-lockfile && node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries && pnpm --filter @museworks/desktop --fail-if-no-match package && uv run --project apps/agent-service pytest apps/agent-service/tests -q`
 Expected: 所有命令退出码为 `0`，无失败测试。
 
 - [ ] **Step 5: 提交 Task 4**
@@ -339,6 +396,11 @@ git commit -m "ci: verify bootstrap boundaries"
 
 ## Final Verification and Review
 
+- [ ] 运行 `pnpm install --frozen-lockfile`；预期 lockfile 不变化且两个 Node workspace 被识别。
+- [ ] 运行 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries`；预期根级工具链、Turbo 任务图、scaffold 测试、构建和 TypeScript AST 边界扫描均以退出码 `0` 完成。
+- [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match package`；预期 Electron Forge package smoke 以退出码 `0` 完成，产物不纳入 Git。
+- [ ] 运行 `uv run --project apps/agent-service pytest apps/agent-service/tests -q`；预期 health 契约测试通过。
+- [ ] 运行 `node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs`；预期 CI matrix、禁止发布约束与边界 AST 测试均通过。
 - [ ] 运行 `git diff --check`；预期退出码为 `0`。
 - [ ] 运行 `git status --short`；预期仅含本任务准备提交的文件，且不含 `.superpowers/`、依赖、模型、凭据和构建物。
 - [ ] 逐项复查 `## Global Constraints`：版本、IPC、health 契约、SSE-only、密钥和 RTX 3060 Ti 8GB VRAM 表述均由对应任务覆盖。
