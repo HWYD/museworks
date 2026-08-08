@@ -18,8 +18,8 @@
 - `window.museworks.app.getInfo(): Promise<{ appVersion: string; platform: "win32" | "darwin"; arch: "x64" | "arm64" }>` 是 renderer 唯一的 Bootstrap bridge。Main 必须在运行时拒绝不受支持的平台或架构。
 - `GET /v1/health` 必须返回 `{ "status": "ok", "service": "museworks-agent", "protocolVersion": 1 }`。
 - 未来外部流式仅标准 SSE（`text/event-stream`）；禁止 NDJSON。本计划不得提前实现 run 或流式端点。
-- 任何密钥仅在受控 main/service 环境读取，绝不传给 preload、renderer、日志或错误响应。
-- 8GB 参考设备的默认未来生成基线只能是 `batch=1`、`768x768`、关闭 preview、动态显存/CPU offload；`1024x1024` 须经 RTX 3060 Ti 8GB 实机门禁，禁止预先宣称稳定。
+- Ark API Key 可由 Electron Main 使用 `safeStorage` 加密持久化，并仅通过受控内存或匿名管道交给本地 Python 服务使用；Python 不持久化、记录或回传，preload 与 renderer 始终不可见。
+- RTX 3060 Ti 8GB VRAM（显存）参考设备的默认未来生成基线只能是 `batch=1`、`768x768`、`preview=none`、动态显存或 CPU offload；`1024x1024` 须经该目标硬件实机门禁，禁止预先宣称稳定。系统内存另行探测和记录。
 - 生产行为采用 TDD；纯人类文档无需脆弱测试，测试不得为了可测性而污染生产 API 或架构。
 
 ---
@@ -30,11 +30,14 @@
 .
 ├── package.json                         # 根脚本、packageManager 与 engines
 ├── pnpm-workspace.yaml                  # Node workspace 边界
+├── pnpm-lock.yaml                       # pnpm 10.33.2 可复现依赖锁
 ├── turbo.json                           # 构建与验证任务图
 ├── apps/
 │   ├── desktop/
 │   │   ├── package.json                 # Electron Forge/React 应用
-│   │   ├── forge.config.ts              # Forge 43.2.0 配置和安全打包入口
+│   │   ├── forge.config.ts              # Forge 7.11.2 / Electron 43.2.0 配置
+│   │   ├── tsconfig.json                # desktop TypeScript 基线
+│   │   ├── vitest.config.ts             # desktop test project 基线
 │   │   ├── src/main/index.ts            # 安全 BrowserWindow 与 IPC handler
 │   │   ├── src/preload/index.ts         # 受限 contextBridge API
 │   │   ├── src/renderer/main.tsx        # React 19.2.4 入口
@@ -60,68 +63,83 @@
 **Files:**
 - Create: `package.json`
 - Create: `pnpm-workspace.yaml`
+- Create: `pnpm-lock.yaml`
 - Create: `turbo.json`
 - Create: `.node-version`
+- Create: `apps/desktop/package.json`
+- Create: `apps/desktop/tsconfig.json`
+- Create: `apps/desktop/vitest.config.ts`
+- Create: `packages/contracts/package.json`
+- Create: `packages/contracts/tsconfig.json`
 - Create: `scripts/verify-boundaries.mjs`
 - Create: `scripts/verify-boundaries.test.mjs`
 
 **Interfaces:**
 - Consumes: 无。
-- Produces: `pnpm verify:boundaries`，退出码 `0` 表示递归扫描的 renderer 源文件中没有 Node built-in 或后端 HTTP 的违规 import；校验器先把 Windows `\\` 规范化为 `/`；`turbo run check` 聚合各包的 `check` 脚本。
+- Produces: 可被 pnpm filter 匹配的 `@museworks/desktop` 与 `@museworks/contracts` workspace 基线，以及 `pnpm verify:boundaries`。校验器使用 TypeScript AST 检查 renderer 中的 Node 导入和网络 API 调用；先把 Windows `\\` 规范化为 `/`。`turbo run check` 聚合各包的 `check` 脚本。
 
 - [ ] **Step 1: 写出失败的边界测试**
 
 ```js
 import assert from 'node:assert/strict';
+import test from 'node:test';
 import { validateSource } from './verify-boundaries.mjs';
 
-assert.throws(
-  () => validateSource('src\\renderer\\bad.ts', "import fs from 'node:fs';"),
-  /renderer must not import Node built-ins/,
-);
-assert.throws(
-  () => validateSource('src/renderer/bad.ts', "fetch('http://127.0.0.1:8000/v1/health')"),
-  /renderer must not call backend HTTP/,
-);
+const cases = [
+  ['side-effect node import', "import 'node:fs';", /renderer must not import Node built-ins/],
+  ['bare Node builtin', "import fs from 'fs';", /renderer must not import Node built-ins/],
+  ['require', "const fs = require('node:fs');", /renderer must not import Node built-ins/],
+  ['dynamic import', "await import('node:path');", /renderer must not import Node built-ins/],
+  ['direct fetch', "fetch('http://127.0.0.1:8000/v1/health');", /renderer must not call network APIs/],
+  ['axios method', "axios.get('http://127.0.0.1:8000/v1/health');", /renderer must not call network APIs/],
+];
+
+for (const [name, source, expected] of cases) {
+  test(name, () => assert.throws(() => validateSource('src\\renderer\\bad.ts', source), expected));
+}
 ```
+
+先在 `verify-boundaries.mjs` 导出临时空实现 `export function validateSource() {}`，使测试模块可以加载且六类断言分别进入失败状态。每一类用例必须是独立测试；同时补充非 renderer 文件与普通 UI 代码不报错的负例，避免用单个脆弱正则宣称完整覆盖。
 
 - [ ] **Step 2: 运行测试确认 red**
 
 Run: `node --test scripts/verify-boundaries.test.mjs`
-Expected: FAIL，原因是 `verify-boundaries.mjs` 尚不存在或未导出 `validateSource`。
+Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言，不能以模块加载失败代替逐类 red。
 
 - [ ] **Step 3: 实现最小工作区和校验器**
 
-```js
-export function validateSource(path, source) {
-  const normalizedPath = path.replaceAll('\\', '/');
-  if (normalizedPath.includes('/renderer/') && /from ['\"]node:/.test(source)) {
-    throw new Error('renderer must not import Node built-ins');
-  }
-  if (normalizedPath.includes('/renderer/') && /\b(fetch|axios)\s*\(/.test(source)) {
-    throw new Error('renderer must not call backend HTTP');
-  }
-}
-```
+使用 TypeScript compiler API 的 `createSourceFile` 与 AST visitor 实现 `validateSource`，不得以文本正则代替语法判断：
 
-在根 `package.json` 设定 `"packageManager": "pnpm@10.33.2"`、`"engines": { "node": "22.22.2" }`，让 `verify:boundaries` 递归读取 `apps/**/src/renderer/**/*.{ts,tsx}` 后逐一调用 `validateSource`，并将 `test:boundaries` 和 `verify:boundaries` 接到 `turbo.json` 的 `check` 任务。
+- `ImportDeclaration` 同时覆盖带绑定和 side-effect import；用 `node:module` 的 `builtinModules` 识别 `node:` 与裸 Node builtin（含子路径）。
+- `CallExpression` 覆盖 `require('...')` 与 `import('...')` 的 Node builtin 参数。
+- renderer 中直接调用标识符 `fetch(...)`，或调用 `axios.<method>(...)`，统一抛出 `renderer must not call network APIs`。
+- 仅扫描规范化路径包含 `/renderer/` 的 `.ts`/`.tsx`，并遍历嵌套语法节点。
 
-- [ ] **Step 4: 运行 green 与工作区验证**
+在根 `package.json` 设定 `"packageManager": "pnpm@10.33.2"`、`"engines": { "node": "22.22.2" }`。创建最小 `apps/desktop` 与 `packages/contracts` package manifests、TypeScript 配置及 desktop Vitest 配置，使 pnpm filter 在 Task 2 写入测试前已经能匹配项目；desktop manifest 预先声明 `"@museworks/contracts": "workspace:*"`。让 `verify:boundaries` 递归读取 `apps/**/src/renderer/**/*.{ts,tsx}` 后逐一调用 `validateSource`，并将 `test:boundaries` 和 `verify:boundaries` 接到 `turbo.json` 的 `check` 任务。
+
+- [ ] **Step 4: 生成并冻结依赖锁**
+
+Run: `pnpm install`
+Expected: PASS；使用 pnpm `10.33.2` 生成 `pnpm-lock.yaml`，两个 workspace 均被识别。
+
+Run: `pnpm install --frozen-lockfile`
+Expected: PASS；锁文件与所有 manifests 一致，不发生 lockfile 更新。
+
+- [ ] **Step 5: 运行 green 与工作区验证**
 
 Run: `node --test scripts/verify-boundaries.test.mjs && pnpm verify:boundaries`
-Expected: PASS；命令退出码为 `0`。
+Expected: PASS；六类禁止项和负例均通过，命令退出码为 `0`。
 
-- [ ] **Step 5: 提交 Task 1**
+- [ ] **Step 6: 提交 Task 1**
 
 ```bash
-git add package.json pnpm-workspace.yaml turbo.json .node-version scripts
+git add package.json pnpm-workspace.yaml pnpm-lock.yaml turbo.json .node-version apps/desktop/package.json apps/desktop/tsconfig.json apps/desktop/vitest.config.ts packages/contracts/package.json packages/contracts/tsconfig.json scripts
 git commit -m "chore: bootstrap pnpm turbo workspace"
 ```
 
 ### Task 2: contracts 与安全 Electron/React 壳
 
 **Files:**
-- Create: `apps/desktop/package.json`
 - Create: `apps/desktop/forge.config.ts`
 - Create: `apps/desktop/src/main/index.ts`
 - Create: `apps/desktop/src/preload/index.ts`
@@ -129,8 +147,6 @@ git commit -m "chore: bootstrap pnpm turbo workspace"
 - Create: `apps/desktop/src/renderer/app.tsx`
 - Create: `apps/desktop/tests/preload.test.ts`
 - Create: `apps/desktop/tests/main-security.test.ts`
-- Create: `packages/contracts/package.json`
-- Create: `packages/contracts/tsconfig.json`
 - Create: `packages/contracts/src/ipc.ts`
 
 **Interfaces:**
@@ -152,8 +168,8 @@ it('exposes only app.getInfo', async () => {
 
 - [ ] **Step 2: 运行测试确认 red**
 
-Run: `pnpm --filter @museworks/desktop test -- tests/preload.test.ts`
-Expected: FAIL，原因是 package、`createMuseworksApi` 或 contracts 尚不存在。
+Run: `pnpm --filter @museworks/desktop --fail-if-no-match test -- tests/preload.test.ts`
+Expected: FAIL；filter 必须匹配 Task 1 创建的 desktop workspace，测试因 `createMuseworksApi` 或 contracts 实现尚不存在而失败，不得以 `No projects found` 作为 red。
 
 - [ ] **Step 3: 最小实现安全边界和 UI**
 
@@ -174,7 +190,7 @@ export function createMuseworksApi(ipcRenderer: Pick<Electron.IpcRenderer, 'invo
 }
 ```
 
-在 `packages/contracts/package.json` 和 `packages/contracts/tsconfig.json` 配置独立 workspace，并在 `apps/desktop/package.json` 声明 `"@museworks/contracts": "workspace:*"`。在 `main/index.ts` 用 `narrowPlatform(value: string): AppInfo['platform']` 与 `narrowArch(value: string): AppInfo['arch']` 显式窄化 `process.platform`、`process.arch`，不受支持的值必须抛错；再由 `ipcMain.handle(IPC_GET_APP_INFO, ...)` 结合 `appInfoSchema` 校验 `app.getVersion()` 与窄化后的值并返回，不能将宽泛的 Node 运行时字符串泄露给 renderer。创建 `BrowserWindow` 时固定 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。renderer 仅调用 `window.museworks.app.getInfo()` 并渲染结果，不调用 HTTP、Node 或环境变量。
+使用 Task 1 已建立的 `@museworks/contracts` workspace、TypeScript 配置和 `"@museworks/contracts": "workspace:*"` 依赖。在 `main/index.ts` 用 `narrowPlatform(value: string): AppInfo['platform']` 与 `narrowArch(value: string): AppInfo['arch']` 显式窄化 `process.platform`、`process.arch`，不受支持的值必须抛错；再由 `ipcMain.handle(IPC_GET_APP_INFO, ...)` 结合 `appInfoSchema` 校验 `app.getVersion()` 与窄化后的值并返回，不能将宽泛的 Node 运行时字符串泄露给 renderer。创建 `BrowserWindow` 时固定 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。renderer 仅调用 `window.museworks.app.getInfo()` 并渲染结果，不调用 HTTP、Node 或环境变量。
 
 - [ ] **Step 4: 增加 main 安全选项测试并运行 green**
 
@@ -188,7 +204,7 @@ expect(() => createAppInfo('0.0.0', 'linux', 'x64')).toThrow(/unsupported platfo
 expect(() => createAppInfo('0.0.0', 'win32', 'ia32')).toThrow(/unsupported architecture/);
 ```
 
-Run: `pnpm --filter @museworks/desktop test -- tests/preload.test.ts tests/main-security.test.ts`
+Run: `pnpm --filter @museworks/desktop --fail-if-no-match test -- tests/preload.test.ts tests/main-security.test.ts`
 Expected: PASS；两项测试均通过。
 
 - [ ] **Step 5: 提交 Task 2**
@@ -307,11 +323,11 @@ Expected: FAIL，原因是 `.github/workflows/ci.yml` 尚不存在。
 - run: pnpm verify:boundaries
 ```
 
-添加 Python 3.12 job，依次运行 Task 3 的 pytest；Node job 运行边界检查和 desktop tests。README 与架构文档必须说明当前仅有 app-info/health 骨架，未提供生成、Ark、ComfyUI 或 SSE run 能力。
+添加 Python 3.12 job，依次运行 Task 3 的 pytest；Node job 先运行 `pnpm install --frozen-lockfile`，再运行边界检查和 desktop tests。README 与架构文档必须说明当前仅有 app-info/health 骨架，未提供生成、Ark、ComfyUI 或 SSE run 能力。
 
 - [ ] **Step 4: 运行全量 green 验证**
 
-Run: `node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm verify:boundaries && pnpm --filter @museworks/desktop test && uv run --project apps/agent-service pytest apps/agent-service/tests -q`
+Run: `pnpm install --frozen-lockfile && node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm verify:boundaries && pnpm --filter @museworks/desktop --fail-if-no-match test && uv run --project apps/agent-service pytest apps/agent-service/tests -q`
 Expected: 所有命令退出码为 `0`，无失败测试。
 
 - [ ] **Step 5: 提交 Task 4**
@@ -325,5 +341,5 @@ git commit -m "ci: verify bootstrap boundaries"
 
 - [ ] 运行 `git diff --check`；预期退出码为 `0`。
 - [ ] 运行 `git status --short`；预期仅含本任务准备提交的文件，且不含 `.superpowers/`、依赖、模型、凭据和构建物。
-- [ ] 逐项复查 `## Global Constraints`：版本、IPC、health 契约、SSE-only、密钥和 8GB 表述均由对应任务覆盖。
+- [ ] 逐项复查 `## Global Constraints`：版本、IPC、health 契约、SSE-only、密钥和 RTX 3060 Ti 8GB VRAM 表述均由对应任务覆盖。
 - [ ] 在合并前安排独立审查，确认没有引入 run、流式、Ark、Deep Agents、ComfyUI、模型下载或签名实现。

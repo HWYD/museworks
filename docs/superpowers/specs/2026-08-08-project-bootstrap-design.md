@@ -31,9 +31,9 @@ Renderer 不得直接使用 Node、环境变量、文件系统、网络凭据或
 
 ## 边界与安全决策
 
-所有密钥仅由主进程或 Python 服务从受控环境读取；不得通过 renderer、preload API、日志、错误对象或提交文件泄露。IPC 采用显式 allowlist 和输入校验，禁止通用 `invoke(channel, payload)` 代理。Electron 必须保持 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。
+Ark API Key 可由 Electron Main 使用 `safeStorage` 加密持久化，并仅通过受控内存或匿名管道交给本地 Python 服务使用；Python 不持久化、记录或回传密钥，renderer 与 preload 始终不可见。密钥不得通过日志、错误对象或提交文件泄露。IPC 采用显式 allowlist 和输入校验，禁止通用 `invoke(channel, payload)` 代理。Electron 必须保持 `contextIsolation: true`、`sandbox: true`、`nodeIntegration: false`。
 
-开发参考硬件为 RTX 3060 Ti 8GB。FLUX.2 Klein 4B distilled 官方约需 8.4GB，未来默认基线为 `batch=1`、`768x768`、关闭 preview、动态显存/CPU offload。`1024x1024` 只能经目标硬件实机门禁后启用；文档和代码均不得在未验证前宣称其可在 8GB 上稳定运行。
+开发参考硬件为 RTX 3060 Ti 8GB VRAM（显存）。FLUX.2 Klein 4B distilled 官方约需 8.4GB VRAM，未来默认基线为 `batch=1`、`768x768`、`preview=none`、动态显存或 CPU offload。`1024x1024` 只能经目标硬件实机门禁后启用；文档和代码均不得在未验证前宣称其可在 8GB VRAM 上稳定运行。系统内存另行探测和记录。
 
 ## 非目标
 

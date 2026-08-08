@@ -21,10 +21,10 @@
 
 ## 修改前必读
 
-规则：分层、依赖、IPC、HTTP、流式前阅读 architecture.md。
-规则：密钥、环境、文件、网络、日志、发布前阅读 security.md。
-规则：生产行为、缺陷、自动化测试前阅读 testing.md。
-规则：模型、ComfyUI、GPU、下载、推理前阅读 local-model-runtime.md。
+规则：分层、依赖、IPC、HTTP、流式前阅读 `.agents/rules/architecture.md`。
+规则：密钥、环境、文件、网络、日志、发布前阅读 `.agents/rules/security.md`。
+规则：生产行为、缺陷、自动化测试前阅读 `.agents/rules/testing.md`。
+规则：模型、ComfyUI、GPU、下载、推理前阅读 `.agents/rules/local-model-runtime.md`。
 规则：读取改动涉及的实现、调用方、测试与 ADR。
 规则：使用 rg 定位事实。
 规则：先检查 git status。
@@ -72,7 +72,7 @@
 规则：FastAPI 是本地服务契约边界。
 规则：Agent Runtime 编排 Agent。
 规则：Tool 表达能力。
-规则：Adapter 隔离 Ark 与 ComfyUI 差异。
+规则：Ark 是 Agent Runtime 调用的模型 Provider Adapter；ComfyUI Adapter 由 Tool 调用。
 规则：不得为便利绕过任一边界。
 规则：跨边界数据必须有类型、校验与错误语义。
 
@@ -95,8 +95,8 @@
 规则：BrowserWindow 保持 nodeIntegration: false。
 规则：IPC 使用 allowlist、具名 handler 与输入校验。
 规则：禁止通用 IPC 转发代理。
-规则：凭据只在受控 Electron Main 或受控 Python 服务使用。
-规则：凭据不得进入 renderer 或 preload。
+规则：Ark API Key 可由 Electron Main 使用 safeStorage 加密持久化，并仅通过受控内存或匿名管道交给本地 Python 服务使用。
+规则：Python 服务不得持久化、记录或回传 Ark API Key；凭据不得进入 renderer 或 preload。
 规则：凭据不得进入日志、错误、遥测或测试夹具。
 规则：路径、URL、IPC 参数、模型输出和外部响应都不可信。
 规则：不得提交 .env 文件。
@@ -105,17 +105,18 @@
 
 ## 8GB 模型运行时边界
 
-规则：开发参考硬件为 RTX 3060 Ti 8GB。
+规则：开发参考硬件为 RTX 3060 Ti 8GB VRAM（显存）。
 规则：这是约束而非性能承诺。
-规则：FLUX.2 Klein 4B distilled 官方约需 8.4GB。
+规则：FLUX.2 Klein 4B distilled 官方约需 8.4GB VRAM。
 规则：默认未来基线是 batch=1。
 规则：默认未来分辨率为 768x768。
 规则：默认关闭 preview。
 规则：默认采用动态显存或 CPU offload。
-规则：1024x1024 须通过目标 8GB 实机门禁后才可启用。
-规则：门禁前不得宣称 8GB 稳定运行 1024。
+规则：1024x1024 须通过目标 RTX 3060 Ti 8GB VRAM 实机门禁后才可启用。
+规则：门禁前不得宣称 8GB VRAM 稳定运行 1024。
+规则：系统内存独立探测与记录，不得与 GPU 显存预算混用。
 规则：该限制覆盖代码、测试、UI、文档与营销材料。
-规则：下载、测量、降级和恢复遵循 local-model-runtime.md。
+规则：下载、测量、降级和恢复遵循 `.agents/rules/local-model-runtime.md`。
 
 ## 代码与测试
 

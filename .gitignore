@@ -38,6 +38,8 @@ htmlcov/
 *.p12
 *.pfx
 *.crt
+secrets/
+*.secret
 
 # Logs and local application state
 *.log
@@ -60,16 +62,15 @@ temp/
 *.tflite
 *.vae
 
-# ComfyUI local runtime, models, caches and output
-ComfyUI/
-comfyui/
-comfyui-runtime/
-comfyui-models/
-comfyui-output/
-models/
-output/
-input/
-custom_nodes/
+# Scoped ComfyUI local runtime, models, caches and output
+.museworks-runtime/comfyui/models/
+.museworks-runtime/comfyui/input/
+.museworks-runtime/comfyui/output/
+.museworks-runtime/comfyui/custom_nodes/
+runtime/comfyui/models/
+runtime/comfyui/input/
+runtime/comfyui/output/
+runtime/comfyui/custom_nodes/
 
 # Electron Forge and installer artifacts
 .webpack/

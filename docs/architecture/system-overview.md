@@ -16,14 +16,14 @@ Museworks 是一个桌面端 AI 创作工程骨架，统一承载对话式智能
 所有请求遵循单向的受控边界：
 
 ```text
-Renderer → Preload → Main → FastAPI → Agent Runtime → Tool → Adapter
+Renderer → Preload → Electron Main → FastAPI → Agent Runtime → Tool → ComfyUI Adapter
 ```
 
 - Renderer 仅负责界面状态和用户交互，不直接访问系统能力或后端服务。
 - Preload 暴露经过白名单约束的 IPC API。
-- Main 管理 Electron 生命周期、IPC 编排和本地服务连接。
+- Electron Main 管理 Electron 生命周期、IPC 编排和本地服务连接。
 - FastAPI 提供本地 HTTP 与流式接口，并将任务交给 Agent Runtime。
-- Agent Runtime 负责 Deep Agents 的编排；Tool 表达可调用能力；Adapter 屏蔽 Ark、ComfyUI 等外部实现差异。
+- Agent Runtime 负责 Deep Agents 的编排；Ark 是 Agent Runtime 调用的模型 Provider Adapter；Tool 表达可调用能力并调用 ComfyUI Adapter。
 
 ## 流式通信约束
 
@@ -31,7 +31,7 @@ Renderer → Preload → Main → FastAPI → Agent Runtime → Tool → Adapter
 
 ## 资源基线
 
-首期以 8GB 内存设备为最低约束，优先使用远端 Ark 推理与按需调用的 ComfyUI 能力。不得在架构或产品文档中宣称该基线可以稳定支持 1024 级图像生成或同等高资源任务；实际能力须以后续测量结果为准。
+开发参考硬件为 RTX 3060 Ti 8GB VRAM（显存），优先使用远端 Ark 推理与按需调用的 ComfyUI 能力。默认未来生成基线为 `batch=1`、`768x768`、`preview=none`，并采用动态显存或 CPU offload；`1024x1024` 仅可在该目标硬件实机门禁通过后启用。系统内存另行探测和记录，不能由 8GB VRAM 推导。
 
 ## 非目标
 
