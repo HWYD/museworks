@@ -1,0 +1,13 @@
+[build-system]
+requires = ["hatchling>=1.27,<2"]
+build-backend = "hatchling.build"
+
+[project]
+name = "museworks-agent"
+version = "0.1.0"
+description = "Local Museworks agent service"
+requires-python = ">=3.12,<3.13"
+dependencies = ["fastapi>=0.116,<0.117"]
+
+[dependency-groups]
+test = ["httpx>=0.28,<0.29", "pytest>=8.4,<9"]
