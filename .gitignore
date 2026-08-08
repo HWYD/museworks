@@ -1,0 +1,95 @@
+# Agent and worktree state
+.worktrees/
+.superpowers/
+
+# Node, pnpm and Turbo
+node_modules/
+.pnpm-store/
+.turbo/
+dist/
+build/
+out/
+.next/
+coverage/
+.cache/
+
+# Python environments, caches and test output
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.hypothesis/
+
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+
+# Logs and local application state
+*.log
+logs/
+log/
+tmp/
+temp/
+*.sqlite
+*.sqlite3
+
+# Model weights and generated media
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.gguf
+*.onnx
+*.engine
+*.tflite
+*.vae
+
+# ComfyUI local runtime, models, caches and output
+ComfyUI/
+comfyui/
+comfyui-runtime/
+comfyui-models/
+comfyui-output/
+models/
+output/
+input/
+custom_nodes/
+
+# Electron Forge and installer artifacts
+.webpack/
+.vite/
+release/
+make/
+artifacts/
+*.asar
+*.dmg
+*.exe
+*.msi
+*.AppImage
+*.deb
+*.rpm
+
+# OS and IDE files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
