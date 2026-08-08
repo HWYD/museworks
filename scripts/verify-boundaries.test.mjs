@@ -116,3 +116,18 @@ test('CLI succeeds for ordinary renderer source', (context) => {
 
   assert.equal(result.status, 0, result.stderr);
 });
+
+test('CLI ignores renderer-like files outside app source roots', (context) => {
+  const workspace = createRendererWorkspace("export const title = 'Museworks';");
+  const cacheDirectory = join(workspace, 'apps', 'agent-service', '.pytest_cache', 'renderer');
+  mkdirSync(cacheDirectory, { recursive: true });
+  writeFileSync(join(cacheDirectory, 'bad.ts'), "import 'node:fs';");
+  context.after(() => rmSync(workspace, { recursive: true, force: true }));
+
+  const result = spawnSync(process.execPath, [resolve('scripts/verify-boundaries.mjs')], {
+    cwd: workspace,
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr);
+});

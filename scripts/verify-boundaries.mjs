@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -149,8 +149,25 @@ function findRendererSourceFiles(directory) {
   return files;
 }
 
+function findAppRendererSourceFiles(appsDirectory) {
+  const files = [];
+
+  for (const entry of readdirSync(appsDirectory, { withFileTypes: true })) {
+    if (!entry.isDirectory()) {
+      continue;
+    }
+
+    const rendererDirectory = join(appsDirectory, entry.name, 'src', 'renderer');
+    if (existsSync(rendererDirectory)) {
+      files.push(...findRendererSourceFiles(rendererDirectory));
+    }
+  }
+
+  return files;
+}
+
 export function verifyBoundaries(rootDirectory = process.cwd()) {
-  const rendererFiles = findRendererSourceFiles(join(rootDirectory, 'apps'));
+  const rendererFiles = findAppRendererSourceFiles(join(rootDirectory, 'apps'));
   const violations = [];
 
   for (const filePath of rendererFiles) {
