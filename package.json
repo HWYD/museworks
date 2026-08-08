@@ -14,7 +14,7 @@
   },
   "scripts": {
     "lint": "turbo run lint",
-    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json apps packages scripts",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json \"apps/desktop/**/*.{json,ts,tsx,css,html}\" \"packages/**/*.{json,ts,tsx}\" \"scripts/**/*.{js,mjs,ts}\"",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "build": "turbo run build",

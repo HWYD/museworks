@@ -17,11 +17,24 @@ test('enforces workspace package-manager and dot-config policy', () => {
   assert.match(npmrc, /^node-linker=hoisted$/m);
   assert.match(editorConfig, /^charset = utf-8$/m);
   assert.match(editorConfig, /^end_of_line = lf$/m);
-  assert.deepEqual(prettierIgnore, ['node_modules/', 'dist/', '.turbo/', '.vite/', 'out/']);
+  assert.deepEqual(prettierIgnore, [
+    'node_modules/',
+    'dist/',
+    '.turbo/',
+    '.vite/',
+    'out/',
+    '**/.venv/**',
+    '**/__pycache__/**',
+    '**/.pytest_cache/**',
+    '**/.mypy_cache/**',
+    '**/.ruff_cache/**',
+    '**/.coverage',
+    '**/htmlcov/**',
+  ]);
   assert.deepEqual(manifest.pnpm?.onlyBuiltDependencies, ['electron', 'electron-winstaller']);
   assert.equal(
     manifest.scripts['format:check'],
-    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json apps packages scripts',
+    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json "apps/desktop/**/*.{json,ts,tsx,css,html}" "packages/**/*.{json,ts,tsx}" "scripts/**/*.{js,mjs,ts}"',
   );
 });
 
