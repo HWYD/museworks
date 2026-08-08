@@ -9,18 +9,32 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ['**/*.{ts,tsx}'],
+    files: ['apps/desktop/src/renderer/**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
       globals: {
         ...globals.browser,
-        ...globals.node,
       },
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
         },
+      },
+    },
+  },
+  {
+    files: [
+      'apps/desktop/src/main/**/*.{ts,tsx}',
+      'apps/desktop/src/preload/**/*.{ts,tsx}',
+      'apps/desktop/*.{ts,mts,cts}',
+      'apps/desktop/tests/**/*.{ts,tsx}',
+      'packages/*/tests/**/*.{ts,tsx}',
+      'scripts/**/*.{js,mjs}',
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.node,
       },
     },
   },

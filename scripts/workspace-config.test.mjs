@@ -4,6 +4,8 @@ import test from 'node:test';
 
 const readText = (path) => readFileSync(path, 'utf8');
 
+const rendererFiles = 'apps/desktop/src/renderer/**/*.{ts,tsx}';
+
 test('enforces workspace package-manager and dot-config policy', () => {
   const npmrc = readText('.npmrc');
   const editorConfig = readText('.editorconfig');
@@ -21,4 +23,13 @@ test('enforces workspace package-manager and dot-config policy', () => {
     manifest.scripts['format:check'],
     'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json apps packages scripts',
   );
+});
+
+test('limits renderer ESLint globals to browser APIs', async () => {
+  const { default: eslintConfig } = await import('../eslint.config.mjs');
+  const rendererConfig = eslintConfig.find((config) => config.files?.includes(rendererFiles));
+
+  assert.ok(rendererConfig);
+  assert.equal(rendererConfig.languageOptions.globals.window, false);
+  assert.equal(rendererConfig.languageOptions.globals.process, undefined);
 });

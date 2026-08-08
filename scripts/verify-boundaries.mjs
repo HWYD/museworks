@@ -1,12 +1,14 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { builtinModules } from 'node:module';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 import ts from 'typescript';
 
 const builtinModuleNames = new Set(
   builtinModules.map((specifier) => specifier.replace(/^node:/, '')),
 );
+const networkClientModules = new Set(['axios', 'node-fetch', 'undici', 'ky']);
 
 function isRendererSource(filePath) {
   const normalizedPath = filePath.replace(/\\/g, '/');
@@ -17,9 +19,32 @@ function isBuiltinModule(specifier) {
   return builtinModuleNames.has(specifier.replace(/^node:/, ''));
 }
 
+function getStaticString(node) {
+  return ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)
+    ? node.text
+    : undefined;
+}
+
 function getStringArgument(node) {
-  const argument = node.arguments[0];
-  return argument && ts.isStringLiteral(argument) ? argument.text : undefined;
+  return node.arguments[0] ? getStaticString(node.arguments[0]) : undefined;
+}
+
+function isIdentifierNamed(node, name) {
+  return ts.isIdentifier(node) && node.text === name;
+}
+
+function isGlobalPropertyAccess(node, objectName, propertyName) {
+  return (
+    ts.isPropertyAccessExpression(node) &&
+    isIdentifierNamed(node.expression, objectName) &&
+    node.name.text === propertyName
+  );
+}
+
+function isProcessExpression(node) {
+  return (
+    isIdentifierNamed(node, 'process') || isGlobalPropertyAccess(node, 'globalThis', 'process')
+  );
 }
 
 export function validateSource(filePath, source) {
@@ -40,6 +65,24 @@ export function validateSource(filePath, source) {
       if (isBuiltinModule(node.moduleSpecifier.text)) {
         throw new Error('renderer must not import Node built-ins');
       }
+
+      if (networkClientModules.has(node.moduleSpecifier.text)) {
+        throw new Error('renderer must not call network APIs');
+      }
+    }
+
+    if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
+      const specifier = node.moduleReference.expression
+        ? getStaticString(node.moduleReference.expression)
+        : undefined;
+
+      if (specifier && isBuiltinModule(specifier)) {
+        throw new Error('renderer must not import Node built-ins');
+      }
+
+      if (specifier && networkClientModules.has(specifier)) {
+        throw new Error('renderer must not call network APIs');
+      }
     }
 
     if (ts.isCallExpression(node)) {
@@ -49,6 +92,10 @@ export function validateSource(filePath, source) {
 
       if ((isRequire || isDynamicImport) && specifier && isBuiltinModule(specifier)) {
         throw new Error('renderer must not import Node built-ins');
+      }
+
+      if ((isRequire || isDynamicImport) && specifier && networkClientModules.has(specifier)) {
+        throw new Error('renderer must not call network APIs');
       }
 
       if (ts.isIdentifier(node.expression) && node.expression.text === 'fetch') {
@@ -62,6 +109,23 @@ export function validateSource(filePath, source) {
       ) {
         throw new Error('renderer must not call network APIs');
       }
+
+      if (
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.name.text === 'fetch' &&
+        (isIdentifierNamed(node.expression.expression, 'window') ||
+          isIdentifierNamed(node.expression.expression, 'globalThis'))
+      ) {
+        throw new Error('renderer must not call network APIs');
+      }
+    }
+
+    if (
+      ts.isPropertyAccessExpression(node) &&
+      node.name.text === 'env' &&
+      isProcessExpression(node.expression)
+    ) {
+      throw new Error('renderer must not access process environment');
     }
 
     ts.forEachChild(node, visit);
@@ -102,7 +166,7 @@ export function verifyBoundaries(rootDirectory = process.cwd()) {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1].replace(/\\/g, '/')}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   try {
     verifyBoundaries();
   } catch (error) {
