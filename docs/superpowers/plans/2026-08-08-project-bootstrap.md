@@ -137,7 +137,7 @@ Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言
 - renderer 中直接调用标识符 `fetch(...)`，或调用 `axios.<method>(...)`，统一抛出 `renderer must not call network APIs`。
 - 仅扫描规范化路径包含 `/renderer/` 的 `.ts`/`.tsx`，并遍历嵌套语法节点。
 
-在根 `package.json` 固定 `"packageManager": "pnpm@10.33.2"`、`"engines": { "node": "22.22.2" }`，并将 `typescript@5.9.3`、`turbo@2.2.3`、`eslint@9.39.1`、`prettier@3.7.3` 与 `vitest@4.1.4` 作为精确版本的 root devDependencies。根脚本必须是下列实际聚合入口，不能以空命令、缺失 workspace filter 或恒真脚本取得成功：
+在根 `package.json` 固定 `"packageManager": "pnpm@10.33.2"`、`"engines": { "node": "22.22.2" }`，并将下列精确版本写入 root `devDependencies`：`typescript@5.9.3`、`turbo@2.2.3`、`eslint@9.39.1`、`@eslint/js@9.39.1`、`typescript-eslint@8.48.0`、`prettier@3.7.3`、`globals@16.5.0`、`vitest@4.1.4`。这些 root-only 工具负责统一的 TypeScript 编译、Turbo 调度、ESLint flat config、格式检查和 workspace 测试；不得把它们复制到每个 package。根脚本必须是下列实际聚合入口，不能以空命令、缺失 workspace filter 或恒真脚本取得成功：
 
 ```json
 {
@@ -153,9 +153,11 @@ Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言
 }
 ```
 
-创建根 `tsconfig.json`（`"strict": true`，并提供 desktop/contracts 继承的 Node 22 基线）、`eslint.config.mjs`、`.prettierrc.json`、`.prettierignore`、`.editorconfig` 与 `.npmrc`。ESLint flat config 必须实际检查 `.ts`/`.tsx`；Prettier ignore 仅排除 `node_modules`、`dist`、`.turbo`、`.vite`、`out` 等依赖或构建目录，不排除源码、配置或测试；`.npmrc` 必须启用 `engine-strict=true` 与 `save-exact=true`。
+创建根 `tsconfig.json`（`"strict": true`，并提供 desktop/contracts 继承的 Node 22 基线）、`eslint.config.mjs`、`.prettierrc.json`、`.prettierignore`、`.editorconfig` 与 `.npmrc`。ESLint flat config 必须组合 `@eslint/js`、`typescript-eslint` 和 `globals`，为 `.ts` / `.tsx` 配置 TypeScript parser 与 JSX 解析，并实际检查源码和测试；Prettier ignore 仅排除 `node_modules`、`dist`、`.turbo`、`.vite`、`out` 等依赖或构建目录，不排除源码、配置或测试；`.npmrc` 必须启用 `engine-strict=true` 与 `save-exact=true`。
 
-创建最小 `apps/desktop` 与 `packages/contracts` manifests、继承根 strict 基线的 `tsconfig.json` / `tsconfig.build.json` 以及 desktop Vitest 配置，使 pnpm filter 在 Task 2 前已经匹配真实 workspace；desktop manifest 预先声明 `"@museworks/contracts": "workspace:*"` 和 `"package": "electron-forge package"`。两个 workspace 都必须提供实际的 `lint`、`typecheck`、`test`、`build`、`check` 脚本：`lint` 检查各自 `src` 与 `tests`，`typecheck` 运行 `tsc --noEmit -p tsconfig.json`，`test` 运行 `vitest run`，`build` 运行 `tsc -p tsconfig.build.json`，`check` 顺序运行前四者。Task 1 同时写入可编译的最小 `src` 入口、一个断言其公开常量的 Vitest scaffold 测试；因此 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 和 `pnpm check` 在仅有骨架时都验证真实源文件、测试或发射产物，且不会因 filter miss 或空成功掩盖问题。
+创建最小 `apps/desktop` 与 `packages/contracts` manifests、继承根 strict 基线的 `tsconfig.json` / `tsconfig.build.json` 以及 desktop Vitest 配置，使 pnpm filter 在 Task 2 前已经匹配真实 workspace。`apps/desktop/package.json` 在 Task 1 一次性完成、Task 2 不得再修改：`dependencies` 必须精确包含 `react@19.2.4`、`react-dom@19.2.4`、`zod@4.3.6`、`electron-squirrel-startup@1.0.1` 与 `@museworks/contracts@workspace:*`；`devDependencies` 必须精确包含 `electron@43.2.0`、`@electron-forge/cli@7.11.2`、`@electron-forge/plugin-webpack@7.11.2`、`@electron-forge/maker-squirrel@7.11.2`、`@electron-forge/maker-dmg@7.11.2`、`@electron-forge/shared-types@7.11.2`、`@electron/fuses@2.1.3`、`webpack@5.101.3`、`ts-loader@9.5.4`、`@types/node@22.20.1`、`@types/react@19.2.14`、`@types/react-dom@19.2.3`、`jsdom@29.0.2`、`@testing-library/react@16.3.2`。运行时依赖只放入 `dependencies`，构建、类型、测试与 Forge 工具只放入 `devDependencies`。desktop manifest 还必须预先声明 `"package": "electron-forge package"`。
+
+两个 workspace 都必须提供实际的 `lint`、`typecheck`、`test`、`build`、`check` 脚本。为保证干净 workspace 可执行，脚本通过 root 精确锁定的工具二进制运行：`lint` 为 `pnpm --workspace-root exec eslint src tests --max-warnings=0`，`typecheck` 为 `pnpm --workspace-root exec tsc --noEmit -p tsconfig.json`，`test` 为 `pnpm --workspace-root exec vitest run`，`build` 为 `pnpm --workspace-root exec tsc -p tsconfig.build.json`，`check` 顺序运行前四者。Task 1 同时写入可编译的最小 `src` 入口、一个断言其公开常量的 Vitest scaffold 测试；因此 `pnpm lint`、`pnpm typecheck`、`pnpm test`、`pnpm build` 和 `pnpm check` 在仅有骨架时都验证真实源文件、测试或 TypeScript 发射产物，且不会因 filter miss、缺失本地 binary 或空成功掩盖问题。
 
 `turbo.json` 使用单一任务图：`lint` 声明 `dependsOn: ["^lint"]`，`typecheck` 声明 `dependsOn: ["^typecheck"]`，`test` 声明 `dependsOn: ["^test"]`，`build` 声明 `dependsOn: ["^build"]` 且输出为每个 workspace 的 `dist/**`；`check` 依赖本包的 `lint`、`typecheck`、`test`、`build`，所有非构建任务显式 `outputs: []`。让 `verify:boundaries` 递归读取 `apps/**/src/renderer/**/*.{ts,tsx}` 后逐一调用 `validateSource`；根 `check` 在 Turbo 检查完成后再执行该扫描器，保证边界校验不被遗漏。
 
@@ -192,7 +194,7 @@ git commit -m "chore: bootstrap pnpm turbo workspace"
 - Create: `packages/contracts/src/ipc.ts`
 
 **Interfaces:**
-- Consumes: Task 1 的 Node 22.22.2/pnpm workspace 和 `turbo run check`。
+- Consumes: Task 1 的 Node 22.22.2/pnpm workspace、已锁定的 desktop manifest 与 `turbo run check`。本任务只实现 contracts、Forge 配置和应用源码，不修改任何 package manifest。
 - Produces: `window.museworks.app.getInfo(): Promise<{ appVersion: string; platform: "win32" | "darwin"; arch: "x64" | "arm64" }>`；`getInfo` 的 IPC 请求只能由 preload 调用。`packages/contracts` 在本轮仅承载 Electron IPC 的 Zod schema、类型和数字 protocol version；FastAPI HTTP 的 Pydantic/OpenAPI 合约生成留给下一阶段，不在两个 workspace 重复手写 DTO。
 
 - [ ] **Step 1: 写出 preload bridge 的失败测试**
@@ -260,6 +262,7 @@ git commit -m "feat: add secure desktop bootstrap shell"
 
 **Files:**
 - Create: `apps/agent-service/pyproject.toml`
+- Create: `apps/agent-service/uv.lock`
 - Create: `apps/agent-service/src/museworks_agent/__init__.py`
 - Create: `apps/agent-service/src/museworks_agent/main.py`
 - Create: `apps/agent-service/tests/test_health.py`
@@ -269,7 +272,14 @@ git commit -m "feat: add secure desktop bootstrap shell"
 - Produces: `GET /v1/health -> 200`，JSON 严格为 `{status: "ok", service: "museworks-agent", protocolVersion: 1}`。
   本服务不含 `/v1/run`、SSE 或 Ark/ComfyUI 集成。
 
-- [ ] **Step 1: 写出失败的 HTTP 契约测试**
+- [ ] **Step 1: 创建可安装的 Python 项目并同步依赖**
+
+创建 `pyproject.toml`，固定 `requires-python = ">=3.12,<3.13"`，使用 `src` package layout，并在 `[project]` 的 runtime dependencies 声明 FastAPI；在测试 dependency group 声明 pytest 与 httpx，使 `fastapi.testclient.TestClient` 的 HTTP 客户端可用。先创建空的 `src/museworks_agent/__init__.py`，但不要创建 `main.py`。配置与依赖脚手架不属于生产行为，不把这一步当作 TDD red/green 循环。
+
+Run: `uv lock --project apps/agent-service && uv sync --project apps/agent-service --group test`
+Expected: PASS；生成 `apps/agent-service/uv.lock`，并安装 Python 3.12、FastAPI、pytest 与 httpx，以便下一步 pytest 能实际加载测试环境。
+
+- [ ] **Step 2: 写出失败的 HTTP 契约测试**
 
 ```python
 from fastapi.testclient import TestClient
@@ -282,12 +292,12 @@ def test_health_returns_versioned_service_contract() -> None:
     assert isinstance(response.json()['protocolVersion'], int)
 ```
 
-- [ ] **Step 2: 运行测试确认 red**
+- [ ] **Step 3: 运行测试确认 red**
 
-Run: `uv run --project apps/agent-service pytest apps/agent-service/tests/test_health.py -q`
+Run: `uv run --project apps/agent-service --group test pytest apps/agent-service/tests/test_health.py -q`
 Expected: FAIL，原因是 `museworks_agent.main` 尚不存在。
 
-- [ ] **Step 3: 实现最小 FastAPI app**
+- [ ] **Step 4: 实现最小 FastAPI app**
 
 ```python
 from typing import Literal
@@ -308,20 +318,20 @@ def health() -> HealthResponse:
     return HealthResponse(status='ok', service='museworks-agent', protocolVersion=1)
 ```
 
-在 `pyproject.toml` 固定 `requires-python = ">=3.12,<3.13"`，并声明 FastAPI、pytest、httpx；`HealthResponse` 仅是该 FastAPI 端点的 response model，不导入或镜像 `packages/contracts`。不加入 Ark、Deep Agents、ComfyUI、SSE 或模型依赖。
+`HealthResponse` 仅是该 FastAPI 端点的 response model，不导入或镜像 `packages/contracts`。不加入 Ark、Deep Agents、ComfyUI、SSE 或模型依赖。
 
-- [ ] **Step 4: 运行 green 与服务启动检查**
+- [ ] **Step 5: 运行 green 与服务启动检查**
 
-Run: `uv run --project apps/agent-service pytest apps/agent-service/tests/test_health.py -q`
+Run: `uv run --project apps/agent-service --group test pytest apps/agent-service/tests/test_health.py -q`
 Expected: PASS，`1 passed`。
 
-Run: `uv run --project apps/agent-service python -c "from museworks_agent.main import app; assert any(route.path == '/v1/health' for route in app.routes)"`
+Run: `uv run --project apps/agent-service --group test python -c "from museworks_agent.main import app; assert any(route.path == '/v1/health' for route in app.routes)"`
 Expected: 退出码为 `0`。
 
-- [ ] **Step 5: 提交 Task 3**
+- [ ] **Step 6: 提交 Task 3**
 
 ```bash
-git add apps/agent-service
+git add apps/agent-service/pyproject.toml apps/agent-service/uv.lock apps/agent-service/src apps/agent-service/tests
 git commit -m "feat: add agent health service"
 ```
 
@@ -335,7 +345,7 @@ git commit -m "feat: add agent health service"
 - Modify: `docs/architecture/development-workflow.md`
 
 **Interfaces:**
-- Consumes: Task 1 的 `pnpm verify:boundaries`，Task 2 的 desktop test 命令，Task 3 的 `uv run --project apps/agent-service pytest`。
+- Consumes: Task 1 的 `pnpm verify:boundaries`，Task 2 的 desktop test 命令，Task 3 的 `uv run --project apps/agent-service --group test pytest`。
 - Produces: 对 pull request 和 main push 在 Windows x64 与 macOS arm64 上执行 Node 22.22.2/pnpm 10.33.2 与 Python 3.12 验证、并原生运行 Electron Forge package smoke 的 GitHub Actions；README 仅描述当前 bootstrap 能力和非目标。
 
 - [ ] **Step 1: 写出失败的 CI 配置静态测试**
@@ -375,7 +385,7 @@ strategy:
 runs-on: ${{ matrix.runner }}
 ```
 
-在这个单一 matrix job 的每个原生 OS 上都执行 `actions/setup-node@v4`（Node `22.22.2`）、`corepack enable`、`corepack prepare pnpm@10.33.2 --activate`、`pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm format:check`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm check` 与 `pnpm verify:boundaries`；再执行 `actions/setup-python@v5`（Python `3.12`）、`astral-sh/setup-uv@v7` 和 `uv run --project apps/agent-service pytest apps/agent-service/tests -q`。在 package 前用 Node 断言 `process.arch` 等于 `${{ matrix.arch }}`，然后执行 `pnpm --filter @museworks/desktop --fail-if-no-match package`。该 Forge package smoke 必须分别在 Windows x64 和 macOS arm64 runner 上原生完成；CI 不得包含 `upload-artifact`、签名、release 或 publish 步骤，生成物仅在 job 生命周期内使用。README 与架构文档必须说明当前仅有 app-info/health 骨架，未提供生成、Ark、ComfyUI 或 SSE run 能力。
+在这个单一 matrix job 的每个原生 OS 上都执行 `actions/setup-node@v4`（Node `22.22.2`）、`corepack enable`、`corepack prepare pnpm@10.33.2 --activate`、`pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm format:check`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm check` 与 `pnpm verify:boundaries`；再执行 `actions/setup-python@v5`（Python `3.12`）、`astral-sh/setup-uv@v7` 和 `uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`。在 package 前用 Node 断言 `process.arch` 等于 `${{ matrix.arch }}`，然后执行 `pnpm --filter @museworks/desktop --fail-if-no-match package`。该 Forge package smoke 必须分别在 Windows x64 和 macOS arm64 runner 上原生完成；CI 不得包含 `upload-artifact`、签名、release 或 publish 步骤，生成物仅在 job 生命周期内使用。README 与架构文档必须说明当前仅有 app-info/health 骨架，未提供生成、Ark、ComfyUI 或 SSE run 能力。
 
 ```yaml
 - run: node -e "if (process.arch !== '${{ matrix.arch }}') { throw new Error('unexpected architecture: ' + process.arch); }"
@@ -384,8 +394,8 @@ runs-on: ${{ matrix.runner }}
 
 - [ ] **Step 4: 运行全量 green 验证**
 
-Run: `pnpm install --frozen-lockfile && node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries && pnpm --filter @museworks/desktop --fail-if-no-match package && uv run --project apps/agent-service pytest apps/agent-service/tests -q`
-Expected: 所有命令退出码为 `0`，无失败测试。
+Run: `pnpm install --frozen-lockfile && node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries && pnpm --filter @museworks/desktop --fail-if-no-match package && uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`
+Expected: 本机 Windows 的命令退出码均为 `0`，无失败测试。该本机命令只验证 workflow 静态契约和 Windows x64 package，不能替代 macOS arm64 原生执行。
 
 - [ ] **Step 5: 提交 Task 4**
 
@@ -399,9 +409,11 @@ git commit -m "ci: verify bootstrap boundaries"
 - [ ] 运行 `pnpm install --frozen-lockfile`；预期 lockfile 不变化且两个 Node workspace 被识别。
 - [ ] 运行 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries`；预期根级工具链、Turbo 任务图、scaffold 测试、构建和 TypeScript AST 边界扫描均以退出码 `0` 完成。
 - [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match package`；预期 Electron Forge package smoke 以退出码 `0` 完成，产物不纳入 Git。
-- [ ] 运行 `uv run --project apps/agent-service pytest apps/agent-service/tests -q`；预期 health 契约测试通过。
+- [ ] 运行 `uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`；预期 health 契约测试通过。
 - [ ] 运行 `node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs`；预期 CI matrix、禁止发布约束与边界 AST 测试均通过。
+- [ ] 真正的合并与跨平台完成门禁是 GitHub Actions 的 `windows-2025` / `x64` 与 `macos-15` / `arm64` matrix jobs 实际成功，且两个 job 都完成 Node、Python 与原生 Forge package smoke；仅有 workflow 静态测试或本机 Windows package 时，不得宣称跨平台完成。
+- [ ] 仓库没有有效 `origin` 时，记录“macOS arm64 CI 未验证”，本地只运行 workflow 静态契约和 Windows x64 package；接入远程后立即触发并检查上述 matrix jobs，补齐该门禁后才能移除未验证记录。
 - [ ] 运行 `git diff --check`；预期退出码为 `0`。
-- [ ] 运行 `git status --short`；预期仅含本任务准备提交的文件，且不含 `.superpowers/`、依赖、模型、凭据和构建物。
+- [ ] 运行 `git status --short`；在提交后预期工作树为空，不含 `.superpowers/`、依赖、模型、凭据和构建物。
 - [ ] 逐项复查 `## Global Constraints`：版本、IPC、health 契约、SSE-only、密钥和 RTX 3060 Ti 8GB VRAM 表述均由对应任务覆盖。
 - [ ] 在合并前安排独立审查，确认没有引入 run、流式、Ark、Deep Agents、ComfyUI、模型下载或签名实现。
