@@ -1,17 +1,20 @@
 {
   "name": "@museworks/desktop",
+  "productName": "Museworks",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "main": ".vite/build/main.js",
+  "config": {
+    "forge": "./forge.config.ts"
+  },
   "scripts": {
     "lint": "eslint src tests --max-warnings=0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js package",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "start": "electron-forge start",
-    "package": "electron-forge package"
+    "start": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js start",
+    "package": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js package"
   },
   "dependencies": {
     "@museworks/contracts": "workspace:*",
@@ -20,7 +23,6 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
-    "@electron-forge/cli": "7.11.2",
     "@electron-forge/maker-dmg": "7.11.2",
     "@electron-forge/maker-squirrel": "7.11.2",
     "@electron-forge/plugin-fuses": "7.11.2",

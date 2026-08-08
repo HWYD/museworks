@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 const readText = (path) => readFileSync(path, 'utf8');
+const require = createRequire(import.meta.url);
 
 const rendererFiles = 'apps/desktop/src/renderer/**/*.{ts,tsx}';
 
@@ -45,4 +47,37 @@ test('limits renderer ESLint globals to browser APIs', async () => {
   assert.ok(rendererConfig);
   assert.equal(rendererConfig.languageOptions.globals.window, false);
   assert.equal(rendererConfig.languageOptions.globals.process, undefined);
+});
+
+test('owns the Forge CLI at the hoisted workspace root', () => {
+  const rootManifest = JSON.parse(readText('package.json'));
+  const desktopManifest = JSON.parse(readText('apps/desktop/package.json'));
+
+  assert.equal(rootManifest.devDependencies['@electron-forge/cli'], '7.11.2');
+  assert.equal(rootManifest.scripts['forge:desktop'], undefined);
+  assert.equal(desktopManifest.devDependencies['@electron-forge/cli'], undefined);
+  assert.equal(
+    desktopManifest.scripts.start,
+    'node ../../node_modules/@electron-forge/cli/dist/electron-forge.js start',
+  );
+  assert.equal(
+    desktopManifest.scripts.package,
+    'node ../../node_modules/@electron-forge/cli/dist/electron-forge.js package',
+  );
+  assert.equal(desktopManifest.scripts.build, desktopManifest.scripts.package);
+});
+
+test('pins the Forge Vite runtime to the approved desktop version', () => {
+  const rootManifest = JSON.parse(readText('package.json'));
+  const desktopManifest = JSON.parse(readText('apps/desktop/package.json'));
+  const pluginViteManifestPath = require.resolve('@electron-forge/plugin-vite/package.json');
+  const pluginViteRuntimePath = require.resolve('vite/package.json', {
+    paths: [pluginViteManifestPath],
+  });
+
+  assert.equal(rootManifest.devDependencies.vite, '7.3.6');
+  assert.equal(desktopManifest.devDependencies.vite, '7.3.6');
+  assert.equal(require('vite/package.json').version, '7.3.6');
+  assert.equal(require('../apps/desktop/node_modules/vite/package.json').version, '7.3.6');
+  assert.equal(require(pluginViteRuntimePath).version, '7.3.6');
 });
