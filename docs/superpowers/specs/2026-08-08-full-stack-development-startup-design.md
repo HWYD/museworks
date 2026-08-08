@@ -15,7 +15,7 @@
 - `pnpm dev` 从仓库根目录同时启动 Electron Forge + Vite 与 FastAPI/Uvicorn。
 - `pnpm dev:agent` 可独立启动 FastAPI；`pnpm dev:desktop` 可独立启动 Electron。
 - Python 服务具有直接、可测试的模块或 console-script 启动入口。
-- Python 服务通过一个最小 pnpm workspace 桥接清单进入 Turbo 的 `dev`、`test` 和适用的工程任务。
+- Python 服务通过一个最小 pnpm workspace 桥接清单进入 Turbo 的 `dev`、`test` 和 `check` 任务。
 - Turbo 负责开发进程编排、日志前缀和终止信号传播；不新增另一套并发启动器。
 - 保持现有 Renderer → Preload → Electron Main → FastAPI 分层与安全边界。
 - 在设计中固定未来 Electron Main sidecar 生命周期接口的职责，但本阶段不加入未使用的生产接口或空实现。
@@ -57,7 +57,7 @@ Turbo 任务不设置先后依赖。当前 UI 尚不消费 FastAPI，因此允�
 | `pnpm dev:agent`   | 通过 Turbo filter 只启动 Python 服务                        |
 | `pnpm dev:desktop` | 通过 Turbo filter 只启动 Electron                           |
 
-桌面包增加 `dev` 脚本并保留现有 `start` 兼容入口。Python 桥接包至少提供 `dev`、`start`、`test` 和与当前工程真实产物相符的任务；不得伪造 lint/typecheck 通过。
+桌面包增加 `dev` 脚本并保留现有 `start` 兼容入口。Python 桥接包精确提供 `dev`、`start`、`test` 和 `check`：`test` 运行 locked pytest，`check` 校验 uv lock；根 `check` 的同包依赖先运行 `test`。本阶段没有 Python lint/typecheck/build 工具或产物，因此不得定义伪造这些任务的脚本。
 
 `turbo.json` 的 `dev` 任务使用：
 
@@ -72,7 +72,7 @@ FastAPI 增加 Uvicorn 运行时依赖和显式 Python 入口。入口负责：
 
 - 加载现有 `museworks_agent.main:app`，不复制 FastAPI app。
 - 只监听 `127.0.0.1`，不开放局域网地址。
-- 使用固定的安全默认端口；如允许端口环境变量，只接受 `1..65535` 的十进制整数并在错误时快速失败。
+- 默认端口固定为 `8765`；`MUSEWORKS_AGENT_PORT` 可覆盖端口，但只接受 `1..65535` 的十进制整数并在错误时快速失败。
 - `dev` 启用源码 reload；独立 `start` 入口不启用 reload。
 - 不读取 Ark API Key，不写 `.env`，不把凭据放入参数或日志。
 
@@ -113,7 +113,7 @@ interface AgentServiceLifecycle {
 1. 工作区与根脚本测试先证明缺少 `dev`/filter 命令，再验证 agent-service 被 Turbo 识别。
 2. Python 测试先证明可执行入口缺失，再验证 host、默认端口、合法覆盖和非法端口失败。
 3. 既有 FastAPI health 与 `/v1/run` 404 契约继续通过。
-4. Turbo dry-run 或等价结构化输出证明根 `dev` 精确包含 desktop 与 agent-service 两个任务，且任务为 persistent、不可缓存。
+4. `turbo run dev --dry=json` 的结构化输出证明根 `dev` 精确包含 desktop 与 agent-service 两个任务，且任务为 persistent、不可缓存。
 5. `pnpm dev:agent` 实际启动后，真实 HTTP 请求能得到严格的 `/v1/health` 响应，并能干净终止。
 6. `pnpm dev` 实际启动 Electron 和 FastAPI；验证真实 Electron 窗口、FastAPI health、根命令终止后的进程清理。
 7. 运行相关 lint、typecheck、Node/Vitest/pytest 测试、boundary/skill gate、构建、Forge package/ASAR，以及 `git diff --check`。macOS 原生行为只能由 macOS runner 声明通过。
