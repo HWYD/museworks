@@ -36,7 +36,7 @@ test('enforces workspace package-manager and dot-config policy', () => {
   assert.deepEqual(manifest.pnpm?.onlyBuiltDependencies, ['electron', 'electron-winstaller']);
   assert.equal(
     manifest.scripts['format:check'],
-    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json "apps/desktop/**/*.{json,ts,tsx,css,html}" "packages/**/*.{json,ts,tsx}" "scripts/**/*.{js,mjs,ts}"',
+    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json "apps/desktop/**/*.{json,ts,tsx,css,html}" "packages/**/*.{json,ts,tsx}" "scripts/**/*.{js,mjs,ts}" ".github/workflows/**/*.{yml,yaml}"',
   );
 });
 
