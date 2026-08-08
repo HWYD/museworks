@@ -149,7 +149,7 @@ Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言
 {
   "scripts": {
     "lint": "turbo run lint",
-    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json .prettierignore .editorconfig .npmrc apps packages scripts",
+    "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json apps packages scripts",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "build": "turbo run build",
@@ -159,7 +159,7 @@ Expected: FAIL；测试报告明确显示六类禁止项各有一个失败断言
 }
 ```
 
-创建根 `tsconfig.json`（`"strict": true`，并提供 desktop/contracts 继承的 Node 22 基线）、`eslint.config.mjs`、`.prettierrc.json`、`.prettierignore`、`.editorconfig` 与 `.npmrc`。ESLint flat config 必须组合 `@eslint/js`、`typescript-eslint` 和 `globals`，为 `.ts` / `.tsx` 配置 TypeScript parser 与 JSX 解析，并实际检查源码和测试；Task 1 的 `format:check` 检查机器维护的 root dot-config、package、workspace、Turbo、TypeScript、ESLint、`apps`、`packages` 与 `scripts`，但不引用尚未创建的 `.github/workflows`。Task 4 创建 workflow 后再将 `.github/workflows` 加入同一脚本。既有治理 Markdown 不纳入自动格式门禁，由任务提交前的人工可读性、链接与范围审查保障。Prettier ignore 仅排除 `node_modules`、`dist`、`.turbo`、`.vite`、`out` 等依赖或构建目录，不排除上述机器维护源码、配置或测试；`.npmrc` 必须启用 `engine-strict=true`、`save-exact=true` 与 Forge 官方 pnpm 要求的 `node-linker=hoisted`。根 `package.json` 还必须声明 `"pnpm": { "onlyBuiltDependencies": ["electron", "electron-winstaller"] }`，只允许这两个原生安装脚本在 install 时构建。
+创建根 `tsconfig.json`（`"strict": true`，并提供 desktop/contracts 继承的 Node 22 基线）、`eslint.config.mjs`、`.prettierrc.json`、`.prettierignore`、`.editorconfig` 与 `.npmrc`。ESLint flat config 必须组合 `@eslint/js`、`typescript-eslint` 和 `globals`，为 `.ts` / `.tsx` 配置 TypeScript parser 与 JSX 解析，并实际检查源码和测试；Task 1 的 `format:check` 只显式检查有 Prettier parser 的 `package.json`、`pnpm-workspace.yaml`、`turbo.json`、`tsconfig.json`、`eslint.config.mjs`、`.prettierrc.json`、`apps`、`packages` 与 `scripts`，但不引用尚未创建的 `.github/workflows`。`.prettierignore`、`.editorconfig` 与 `.npmrc` 没有 Prettier parser，改由 Node 内容测试及人工配置审查检查。Task 4 创建 workflow 后再将 `.github/workflows` 加入同一脚本。既有治理 Markdown 不纳入自动格式门禁，由任务提交前的人工可读性、链接与范围审查保障。Prettier ignore 仅排除 `node_modules`、`dist`、`.turbo`、`.vite`、`out` 等依赖或构建目录，不排除上述机器维护源码、配置或测试；`.npmrc` 必须启用 `engine-strict=true`、`save-exact=true` 与 Forge 官方 pnpm 要求的 `node-linker=hoisted`。根 `package.json` 还必须声明 `"pnpm": { "onlyBuiltDependencies": ["electron", "electron-winstaller"] }`，只允许这两个原生安装脚本在 install 时构建。
 
 创建最小 `apps/desktop` 与 `packages/contracts` manifests、继承根 strict 基线的 `tsconfig.json` / `tsconfig.build.json` 以及 desktop Vitest 配置，使 pnpm filter 在 Task 2 前已经匹配真实 workspace。`apps/desktop/package.json` 的 `dependencies` 必须精确包含 `react@19.2.4`、`react-dom@19.2.4`、`electron-squirrel-startup@1.0.1` 与 `@museworks/contracts@workspace:*`；`devDependencies` 必须精确包含 `electron@43.2.0`、`@electron-forge/cli@7.11.2`、`@electron-forge/plugin-vite@7.11.2`、`@electron-forge/plugin-fuses@7.11.2`、`@electron-forge/maker-squirrel@7.11.2`、`@electron-forge/maker-dmg@7.11.2`、`@electron-forge/shared-types@7.11.2`、`@electron/fuses@1.8.0`、`vite@7.3.6`、`@vitejs/plugin-react@5.2.0`、`@types/node@22.20.1`、`@types/react@19.2.14`、`@types/react-dom@19.2.3`、`jsdom@29.0.2`、`@testing-library/react@16.3.2`；不得列出任何 Webpack 工具链 package。`@electron/fuses@1.8.0` 是 plugin-fuses `7.11.2` 所要求 `^1.0.0` peer 范围内的最新 1.x，必须精确锁定，不能升级到不兼容的 2.x。`packages/contracts/package.json` 的 `dependencies` 必须精确包含 `zod@4.3.6`，因为 `packages/contracts/src/ipc.ts` 直接导入它；contracts 不将 Zod 借由 desktop 间接提供。运行时依赖只放入 `dependencies`，构建、类型、测试与 Forge/Vite 工具只放入 `devDependencies`。Task 1 的 desktop manifest 必须设置 `"main": ".vite/build/main.js"`，scripts 保持 `"build": "tsc -p tsconfig.build.json"`，并预先声明 `"start": "electron-forge start"` 与 `"package": "electron-forge package"`；因为 Task 1 只有 TypeScript 骨架，不能让 build 引用 Task 2 才创建的 Vite 配置。
 
@@ -277,8 +277,8 @@ Expected: Vite 开发服务器与安全桌面窗口启动；人工确认 app inf
 Run: `pnpm --filter @museworks/desktop --fail-if-no-match package`
 Expected: Electron Forge 通过 plugin-vite 构建 main、preload 与 renderer 三个 targets，并以退出码 `0` 完成 package；产物不加入 Git。
 
-Run: `node -e "const fs=require('node:fs'); const found=fs.readdirSync('out',{recursive:true}).some((path)=>path.replaceAll('\\','/').endsWith('/resources/app.asar')); if (!found) throw new Error('missing packaged resources/app.asar');"`
-Expected: PASS；`out/**/resources/app.asar` 存在，证明 `packagerConfig.asar: true` 生效。此时将 `apps/desktop/package.json` 的 `build` script 改为 `electron-forge package`，并将 `turbo.json` 的 build outputs 覆盖为 `.vite/**`、`out/**`、`dist/**`，所以随后 root `pnpm build` 通过 Forge 调用 Vite 且不会因遗漏 `.vite` 或 `out` 发生缓存虚假命中。CI 保持 headless，只验证 package 与 `app.asar`；若后续能在受控带显示环境启动已打包可执行文件，再添加可执行启动 smoke，不能以 headless CI 的 package 成功替代它。
+Run: `node -e "const fs=require('node:fs'); const found=fs.readdirSync('apps/desktop/out',{recursive:true}).some((path)=>path.replaceAll('\\','/').toLowerCase().endsWith('/resources/app.asar')); if (!found) throw new Error('missing packaged resources/app.asar');"`
+Expected: PASS；`apps/desktop/out/**/resources/app.asar` 存在，证明 `packagerConfig.asar: true` 生效；归一化并小写化路径后，Windows `resources` 与 macOS `Contents/Resources` 均能匹配。此时将 `apps/desktop/package.json` 的 `build` script 改为 `electron-forge package`，并将 `turbo.json` 的 build outputs 覆盖为 `.vite/**`、`out/**`、`dist/**`，所以随后 root `pnpm build` 通过 Forge 调用 Vite 且不会因遗漏 `.vite` 或 `out` 发生缓存虚假命中。CI 保持 headless，只验证 package 与 `app.asar`；若后续能在受控带显示环境启动已打包可执行文件，再添加可执行启动 smoke，不能以 headless CI 的 package 成功替代它。
 
 - [ ] **Step 5: 提交 Task 2**
 
@@ -419,7 +419,7 @@ runs-on: ${{ matrix.runner }}
 Task 4 在创建 `.github/workflows/ci.yml` 后，将 root `format:check` 更新为下列明确命令；它覆盖机器维护的 root dot-config 与 workflow，但继续不检查治理 Markdown：
 
 ```json
-"format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json .prettierignore .editorconfig .npmrc apps packages scripts .github/workflows"
+"format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json apps packages scripts .github/workflows"
 ```
 
 这个单一 matrix job 的每个原生 OS 上都执行 `actions/setup-node@v4`（Node `22.22.2`）、`corepack enable`、`corepack prepare pnpm@10.33.2 --activate`、`pnpm install --frozen-lockfile`、`pnpm lint`、`pnpm format:check`、`pnpm typecheck`、`pnpm test`、`pnpm build`、`pnpm check` 与 `pnpm verify:boundaries`；再执行 `actions/setup-python@v5`（Python `3.12`）、`astral-sh/setup-uv@v7` 和 `uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`。在 package 前用 Node 断言 `process.arch` 等于 `${{ matrix.arch }}`，然后执行 `pnpm --filter @museworks/desktop --fail-if-no-match package` 以及 Task 2 的 `out/**/resources/app.asar` Node 断言。该 Forge package smoke 必须分别在 Windows x64 和 macOS arm64 runner 上原生完成；CI 不得包含 `upload-artifact`、签名、release 或 publish 步骤，生成物仅在 job 生命周期内使用。README 与架构文档必须说明当前仅有 app-info/health 骨架，未提供生成、Ark、ComfyUI 或 SSE run 能力。
@@ -431,7 +431,7 @@ Task 4 在创建 `.github/workflows/ci.yml` 后，将 root `format:check` 更新
 
 - [ ] **Step 4: 运行全量 green 验证**
 
-Run: `pnpm install --frozen-lockfile && node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries && pnpm --filter @museworks/desktop --fail-if-no-match package && node -e "const fs=require('node:fs'); const found=fs.readdirSync('out',{recursive:true}).some((path)=>path.replaceAll('\\','/').endsWith('/resources/app.asar')); if (!found) throw new Error('missing packaged resources/app.asar');" && uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`
+Run: `pnpm install --frozen-lockfile && node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries && pnpm --filter @museworks/desktop --fail-if-no-match package && node -e "const fs=require('node:fs'); const found=fs.readdirSync('apps/desktop/out',{recursive:true}).some((path)=>path.replaceAll('\\','/').toLowerCase().endsWith('/resources/app.asar')); if (!found) throw new Error('missing packaged resources/app.asar');" && uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`
 Expected: 本机 Windows 的命令退出码均为 `0`，无失败测试。该本机命令只验证 workflow 静态契约和 Windows x64 package，不能替代 macOS arm64 原生执行。
 
 - [ ] **Step 5: 提交 Task 4**
@@ -446,7 +446,7 @@ git commit -m "ci: verify bootstrap boundaries"
 - [ ] 运行 `pnpm install --frozen-lockfile`；预期 lockfile 不变化且两个 Node workspace 被识别。
 - [ ] 运行 `pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build && pnpm check && pnpm verify:boundaries`；预期根级工具链、Turbo 任务图、scaffold 测试、构建和 TypeScript AST 边界扫描均以退出码 `0` 完成。
 - [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match start`；人工确认 Vite 开发服务器、受 sandbox 保护的桌面窗口和 app-info 壳页面均可用后关闭窗口，预期退出码为 `0`。
-- [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match build && pnpm --filter @museworks/desktop --fail-if-no-match package`，再运行 Task 2 的 `resources/app.asar` Node 断言；预期 Vite main/preload/renderer targets、Electron Forge package smoke 与 ASAR 检查均以退出码 `0` 完成，产物不纳入 Git。
+- [ ] 在本机 Windows x64 运行 `pnpm --filter @museworks/desktop --fail-if-no-match build && pnpm --filter @museworks/desktop --fail-if-no-match package`，再运行 Task 2 的 `apps/desktop/out` 路径归一化 ASAR Node 断言；预期 Vite main/preload/renderer targets、Electron Forge package smoke 与 ASAR 检查均以退出码 `0` 完成，产物不纳入 Git。
 - [ ] 运行 `uv run --project apps/agent-service --group test pytest apps/agent-service/tests -q`；预期 health 契约测试通过。
 - [ ] 运行 `node --test scripts/ci-workflow.test.mjs scripts/verify-boundaries.test.mjs`；预期 CI matrix、禁止发布约束与边界 AST 测试均通过。
 - [ ] 真正的合并与跨平台完成门禁是 GitHub Actions 的 `windows-2025` / `x64` 与 `macos-15` / `arm64` matrix jobs 实际成功，且两个 job 都完成 Node、Python 与原生 Forge package smoke；仅有 workflow 静态测试或本机 Windows package 时，不得宣称跨平台完成。
