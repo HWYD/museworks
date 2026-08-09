@@ -64,10 +64,15 @@ test('runs the bootstrap gates on the approved native CI matrix', () => {
   }
 
   assert.match(workflow, /uv sync --project apps\/agent-service --group test --locked/);
-  assert.match(
-    workflow,
-    /uv run --project apps\/agent-service --group test --locked pytest apps\/agent-service\/tests -q/,
-  );
+  const pythonSetup = workflow.indexOf('- name: Set up Python');
+  const uvSetup = workflow.indexOf('- name: Set up uv');
+  const pythonSync = workflow.indexOf('- name: Sync Python dependencies');
+  const turboTest = workflow.indexOf('run: pnpm test');
+
+  assert.ok(pythonSetup > 0 && pythonSetup < turboTest);
+  assert.ok(uvSetup > pythonSetup && uvSetup < turboTest);
+  assert.ok(pythonSync > uvSetup && pythonSync < turboTest);
+  assert.doesNotMatch(workflow, /uv run .*pytest/);
   assert.match(workflow, /process\.arch\s*!==\s*['"]\$\{\{\s*matrix\.arch\s*\}\}['"]/);
   assert.match(workflow, /pnpm --filter @museworks\/desktop --fail-if-no-match package/);
   assert.match(workflow, /run:\s*node scripts\/verify-packaged-asar\.mjs/);

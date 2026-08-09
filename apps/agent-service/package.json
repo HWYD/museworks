@@ -1,0 +1,11 @@
+{
+  "name": "@museworks/agent-service",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "uv run --locked museworks-agent --reload",
+    "start": "uv run --locked museworks-agent",
+    "test": "uv run --group test --locked pytest tests -q",
+    "check": "uv lock --check"
+  }
+}

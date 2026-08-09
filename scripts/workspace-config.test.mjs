@@ -36,7 +36,7 @@ test('enforces workspace package-manager and dot-config policy', () => {
   assert.deepEqual(manifest.pnpm?.onlyBuiltDependencies, ['electron', 'electron-winstaller']);
   assert.equal(
     manifest.scripts['format:check'],
-    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json AGENTS.md ".agents/**/*.{md,yaml,yml}" "apps/desktop/**/*.{json,ts,tsx,css,html}" "packages/**/*.{json,ts,tsx}" "scripts/**/*.{js,mjs,ts}" ".github/workflows/**/*.{yml,yaml}" README.md docs/architecture/development-workflow.md docs/architecture/skill-governance.md',
+    'prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json AGENTS.md ".agents/**/*.{md,yaml,yml}" "apps/**/*.{json,ts,tsx,css,html}" "packages/**/*.{json,ts,tsx}" "scripts/**/*.{js,mjs,ts}" ".github/workflows/**/*.{yml,yaml}" README.md docs/architecture/development-workflow.md docs/architecture/skill-governance.md',
   );
   const prettierConfig = JSON.parse(readText('.prettierrc.json'));
   assert.deepEqual(prettierConfig.overrides, [
@@ -50,6 +50,37 @@ test('enforces workspace package-manager and dot-config policy', () => {
     manifest.scripts.check,
     'turbo run check && pnpm verify:boundaries && pnpm verify:skills',
   );
+});
+
+test('defines Turbo-owned full-stack development entrypoints', () => {
+  const rootManifest = JSON.parse(readText('package.json'));
+  const rootTurbo = JSON.parse(readText('turbo.json'));
+  const desktopManifest = JSON.parse(readText('apps/desktop/package.json'));
+  const agentManifest = JSON.parse(readText('apps/agent-service/package.json'));
+  const agentTurbo = JSON.parse(readText('apps/agent-service/turbo.json'));
+
+  assert.equal(rootManifest.scripts.dev, 'turbo run dev');
+  assert.equal(
+    rootManifest.scripts['dev:agent'],
+    'turbo run dev --filter=@museworks/agent-service',
+  );
+  assert.equal(rootManifest.scripts['dev:desktop'], 'turbo run dev --filter=@museworks/desktop');
+  assert.deepEqual(rootTurbo.tasks.dev, { cache: false, persistent: true });
+  assert.equal(desktopManifest.scripts.dev, desktopManifest.scripts.start);
+  assert.deepEqual(agentManifest.scripts, {
+    dev: 'uv run --locked museworks-agent --reload',
+    start: 'uv run --locked museworks-agent',
+    test: 'uv run --group test --locked pytest tests -q',
+    check: 'uv lock --check',
+  });
+  assert.equal(agentManifest.private, true);
+  assert.deepEqual(agentTurbo, {
+    extends: ['//'],
+    tasks: { dev: { env: ['MUSEWORKS_AGENT_PORT'] } },
+  });
+  for (const forbidden of ['lint', 'typecheck', 'build']) {
+    assert.equal(agentManifest.scripts[forbidden], undefined);
+  }
 });
 
 test('limits renderer ESLint globals to browser APIs', async () => {

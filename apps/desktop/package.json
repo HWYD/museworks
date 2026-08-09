@@ -8,6 +8,7 @@
     "forge": "./forge.config.ts"
   },
   "scripts": {
+    "dev": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js start",
     "lint": "eslint src tests --max-warnings=0",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
