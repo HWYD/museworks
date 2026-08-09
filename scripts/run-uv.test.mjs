@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import { resolveUvExecutable, uvNotFoundMessage } from './run-uv.mjs';
@@ -45,6 +49,20 @@ test('uses the system home when Turbo omits USERPROFILE on Windows', () => {
   );
 });
 
+test('does not replace an explicit empty USERPROFILE with the system home', () => {
+  const fallbackUv = 'C:\\Users\\dev\\.local\\bin\\uv.exe';
+
+  assert.equal(
+    resolveUvExecutable({
+      platform: 'win32',
+      env: { PATH: 'C:\\missing', USERPROFILE: '' },
+      homeDirectory: 'C:\\Users\\dev',
+      isExecutable: (candidate) => candidate === fallbackUv,
+    }),
+    null,
+  );
+});
+
 test('does not invent a fallback outside Windows', () => {
   assert.equal(
     resolveUvExecutable({
@@ -75,3 +93,31 @@ test('returns an actionable UTF-8-safe error without dumping PATH', () => {
   assert.match(message, /%USERPROFILE%\\\.local\\bin\\uv\.exe/);
   assert.doesNotMatch(message, /PATH=/);
 });
+
+test(
+  'returns a fixed error when the resolved Windows uv executable cannot start',
+  { skip: process.platform !== 'win32' },
+  () => {
+    const directory = mkdtempSync(join(tmpdir(), 'museworks-uv-start-'));
+    const fakeUv = join(directory, 'uv.exe');
+    writeFileSync(fakeUv, 'not a Windows executable');
+
+    try {
+      const result = spawnSync(process.execPath, ['scripts/run-uv.mjs', '--version'], {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: { ...process.env, PATH: directory },
+      });
+
+      assert.equal(result.status, 1);
+      assert.equal(result.stdout, '');
+      assert.equal(
+        result.stderr.trim(),
+        'Museworks could not start uv 0.11.32. Reinstall it from https://docs.astral.sh/uv/getting-started/installation/ and retry.',
+      );
+      assert.equal(result.stderr.includes(directory), false);
+    } finally {
+      rmSync(directory, { force: true, recursive: true });
+    }
+  },
+);

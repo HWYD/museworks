@@ -63,7 +63,9 @@ export function main(args = process.argv.slice(2)) {
     stdio: 'inherit',
   });
   if (result.error) {
-    console.error(`Museworks failed to start uv ${UV_VERSION}: ${result.error.message}`);
+    console.error(
+      `Museworks could not start uv ${UV_VERSION}. Reinstall it from https://docs.astral.sh/uv/getting-started/installation/ and retry.`,
+    );
     return 1;
   }
   return result.status ?? 1;
