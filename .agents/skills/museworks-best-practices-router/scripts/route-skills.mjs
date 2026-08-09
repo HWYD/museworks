@@ -22,7 +22,44 @@ function addEnabled(required, forbidden, name) {
   }
 }
 
+function workflowForLevel(level) {
+  if (level === 'L2') {
+    return {
+      profile: 'standard',
+      trackedArtifacts: ['concise-plan'],
+      worktreeRequired: true,
+      execution: 'inline',
+      review: 'final-independent',
+      ephemeralTaskDocs: false,
+    };
+  }
+
+  if (level === 'L3') {
+    return {
+      profile: 'full',
+      trackedArtifacts: ['design', 'implementation-plan'],
+      worktreeRequired: true,
+      execution: 'subagent-driven',
+      review: 'per-task-and-final',
+      ephemeralTaskDocs: true,
+    };
+  }
+
+  return {
+    profile: 'light',
+    trackedArtifacts: [],
+    worktreeRequired: false,
+    execution: 'inline',
+    review: 'self',
+    ephemeralTaskDocs: false,
+  };
+}
+
 export function routeSkills({ paths = [], intent = '', level = 'L1' } = {}) {
+  if (!['L0', 'L1', 'L2', 'L3'].includes(level)) {
+    throw new RangeError(`Unsupported Museworks change level: ${level}`);
+  }
+
   const normalized = normalizedPaths(paths);
   const lowerIntent = intent.toLowerCase();
   const required = ['using-superpowers', 'museworks-best-practices-router'];
@@ -124,11 +161,13 @@ export function routeSkills({ paths = [], intent = '', level = 'L1' } = {}) {
   }
 
   if (level === 'L2' || level === 'L3') {
-    required.push('requesting-code-review');
+    required.push('using-git-worktrees', 'requesting-code-review');
   }
   if (level === 'L3') {
-    required.push('brainstorming', 'writing-plans');
-    notes.push('L3 requires approved design and implementation planning before coding.');
+    required.push('brainstorming', 'writing-plans', 'subagent-driven-development');
+    notes.push(
+      'L3 requires an approved design, implementation plan, subagent-driven execution, per-task review, and final independent review.',
+    );
   }
 
   if (/generic ipc|broad ipc|ipc proxy|arbitrary ipc|generic.*invoke/.test(lowerIntent)) {
@@ -153,6 +192,7 @@ export function routeSkills({ paths = [], intent = '', level = 'L1' } = {}) {
 
   return {
     level,
+    workflow: workflowForLevel(level),
     required: unique(required),
     optional: unique(optional),
     forbidden: unique(forbidden),

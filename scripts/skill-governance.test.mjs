@@ -142,6 +142,120 @@ test('L2 and L3 changes require independent review', () => {
   }
 });
 
+test('workflow profiles scale process obligations by change level', () => {
+  const cases = [
+    {
+      level: 'L0',
+      workflow: {
+        profile: 'light',
+        trackedArtifacts: [],
+        worktreeRequired: false,
+        execution: 'inline',
+        review: 'self',
+        ephemeralTaskDocs: false,
+      },
+    },
+    {
+      level: 'L1',
+      workflow: {
+        profile: 'light',
+        trackedArtifacts: [],
+        worktreeRequired: false,
+        execution: 'inline',
+        review: 'self',
+        ephemeralTaskDocs: false,
+      },
+    },
+    {
+      level: 'L2',
+      workflow: {
+        profile: 'standard',
+        trackedArtifacts: ['concise-plan'],
+        worktreeRequired: true,
+        execution: 'inline',
+        review: 'final-independent',
+        ephemeralTaskDocs: false,
+      },
+    },
+    {
+      level: 'L3',
+      workflow: {
+        profile: 'full',
+        trackedArtifacts: ['design', 'implementation-plan'],
+        worktreeRequired: true,
+        execution: 'subagent-driven',
+        review: 'per-task-and-final',
+        ephemeralTaskDocs: true,
+      },
+    },
+  ];
+
+  for (const scenario of cases) {
+    const route = routeSkills({
+      paths: ['apps/agent-service/src/museworks_agent/internal.py'],
+      intent: 'apply the approved change',
+      level: scenario.level,
+    });
+
+    assert.deepEqual(route.workflow, scenario.workflow);
+  }
+});
+
+test('standard and full profiles load only their required process skills', () => {
+  const standard = routeSkills({
+    paths: ['apps/agent-service/src/museworks_agent/routes/health.py'],
+    intent: 'add a compatible HTTP response field',
+    level: 'L2',
+  });
+  const full = routeSkills({
+    paths: ['apps/desktop/src/main/credentials.ts'],
+    intent: 'persist an Ark API key with safeStorage',
+    level: 'L3',
+  });
+
+  expectIncludes(standard.required, ['using-git-worktrees', 'requesting-code-review']);
+  assert.ok(!standard.required.includes('writing-plans'));
+  assert.ok(!standard.required.includes('subagent-driven-development'));
+
+  expectIncludes(full.required, [
+    'brainstorming',
+    'writing-plans',
+    'using-git-worktrees',
+    'subagent-driven-development',
+    'requesting-code-review',
+  ]);
+});
+
+test('paths select domain guidance without overriding the explicit change level', () => {
+  const internalChange = routeSkills({
+    paths: ['apps/agent-service/src/museworks_agent/internal.py'],
+    intent: 'refactor a private calculation without changing HTTP behavior',
+    level: 'L1',
+  });
+  const contractChange = routeSkills({
+    paths: ['apps/agent-service/src/museworks_agent/internal.py'],
+    intent: 'add a compatible HTTP response field',
+    level: 'L2',
+  });
+
+  assert.equal(internalChange.level, 'L1');
+  assert.equal(internalChange.workflow.profile, 'light');
+  assert.equal(contractChange.level, 'L2');
+  assert.equal(contractChange.workflow.profile, 'standard');
+});
+
+test('unknown change levels fail instead of silently selecting the light profile', () => {
+  assert.throws(
+    () =>
+      routeSkills({
+        paths: ['apps/agent-service/src/museworks_agent/internal.py'],
+        intent: 'apply a change',
+        level: 'L4',
+      }),
+    /Unsupported Museworks change level: L4/,
+  );
+});
+
 test('CI candidates remain forbidden until pinned audit is complete', () => {
   const route = routeSkills({
     paths: ['.github/workflows/ci.yml'],

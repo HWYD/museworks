@@ -34,17 +34,16 @@
 
 规则：Superpowers 是唯一主开发流程。
 规则：不引入、复制或模仿 Spec Kit。
-规则：新功能或行为设计先用 brainstorming。
-规则：设计批准后再写 design。
-规则：多步骤工作先用 writing-plans。
-规则：计划任务使用 checkbox。
-规则：实施前使用 using-git-worktrees。
-规则：独立任务使用 subagent-driven-development。
+规则：每个仓库任务先使用 using-superpowers，再使用 museworks-best-practices-router 取得最小工作流与领域 Skill。
+规则：L0/L1 默认直接实施，不强制 brainstorming、正式计划、新 worktree、子代理或独立审查。
+规则：L1 缺陷先用 systematic-debugging；生产行为修改保持最小 red、green、refactor 循环。
+规则：L2 使用一份精简计划与隔离 worktree，默认直接实施，完成后只做一次最终独立审查。
+规则：L3 依次使用 brainstorming、writing-plans、using-git-worktrees 与 subagent-driven-development，并执行逐任务和最终独立审查。
+规则：L2 精简计划包含目标、接口变化、实现分组、测试与假设，不使用完整 SDD 任务模板。
+规则：implementation plan 中的 Task N 是正式任务清单；task brief、task report、review package 与 progress ledger 仅是完整 SDD 的 Git 忽略临时产物。
+规则：用户明确要求可以提高流程强度；Agent 不得凭偏好把 L0/L1 升级为完整流程。
 规则：生产变更先用 test-driven-development。
-规则：TDD 保持 red、green、refactor 循环。
-规则：异常和回归先用 systematic-debugging。
 规则：完成前使用 verification-before-completion。
-规则：合并前使用 requesting-code-review。
 
 ## 最佳实践 Skill 路由
 
@@ -61,15 +60,19 @@
 
 ## Change Level
 
-规则：L0 是文档、ADR、计划、忽略规则或注释。
+规则：判级固定检查边界范围、敏感性与权限、可逆性、影响半径四个维度。
+规则：L0 是无可观察行为变化的文档、ADR、计划、忽略规则、格式或注释。
 规则：L0 最低验证为人工可读性与 git diff --check。
-规则：L1 是单模块可观察行为。
+规则：L1 是局部、可逆、无共享契约或权限变化的单模块行为、局部 UI、内部逻辑或开发命令修复。
 规则：L1 必须有失败测试、最小实现与回归验证。
-规则：L2 是 IPC、HTTP、SSE、持久化、权限或跨包契约。
-规则：L2 需要设计、计划、契约测试、调用方验证和独立审查。
-规则：L3 是密钥、用户迁移、模型下载、权限、发布、签名或破坏性变更。
-规则：L3 需要明确用户批准与回滚或恢复说明。
-规则：级别不确定时按更高一级处理。
+规则：L2 是改变共享契约、跨边界行为或生产资源生命周期，但不涉及敏感凭据、权限扩大或不可逆用户数据变化。
+规则：L2 需要精简计划、契约测试、调用方验证和一次最终独立审查。
+规则：L3 是涉及敏感数据、权限扩大、不可逆用户数据、外部发布或数据传输、下载执行内容，或者失败可能影响用户系统的变更。
+规则：L3 需要明确用户批准、完整设计与实施计划、逐任务和最终审查，以及回滚或恢复说明。
+规则：混合改动采用最高等级；文件路径不能单独决定等级。
+规则：先调查实际调用和行为；只有调查后风险仍不能排除时才升级。
+规则：明确违反项目红线的方案直接拒绝，不能通过标为 L3 获得许可。
+规则：L2/L3 的完整强制触发器以 `.agents/skills/museworks-best-practices-router/references/workflow-profiles.md` 为准。
 规则：L3 不得凭推测扩大授权。
 
 ## 分层红线
@@ -155,7 +158,7 @@
 规则：文档只描述当前真实行为。
 规则：未来计划与未验证性能必须显式标注。
 规则：架构决定使用 ADR。
-规则：设计和计划使用带日期的 docs/superpowers 文件。
+规则：需要落盘的设计和计划使用带日期的 docs/superpowers 文件。
 规则：不为纯文档任务添加脆弱测试。
 规则：提交前检查 git status 和 diff。
 规则：一个提交只聚焦单一目的。
