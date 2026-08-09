@@ -1,40 +1,49 @@
 # 系统概览
 
-## 目标
+## 当前实现
 
-Museworks 是一个桌面端 AI 创作工程骨架，统一承载对话式智能体、工作流工具和图像生成能力。当前文档仅定义系统边界与通信拓扑，不代表功能已经实现。
+Museworks 当前是桌面端 AI 创作工程骨架，不是已具备生图能力的产品。
 
-## 技术边界
+- Electron/React 壳通过 `Renderer → Preload → Electron Main` 的类型化 IPC 读取并展示应用版本、平台和架构。
+- FastAPI 服务独立提供 `GET /v1/health`，Electron Main 尚未连接该服务。
+- 桌面端只使用 Electron Forge + Vite 构建。源码、配置和直接依赖不使用 Webpack；Forge CLI 自身可能包含未使用的模板传递依赖。
+- 当前没有 `/v1/run`、生成、Ark、Deep Agents、ComfyUI、本地模型、密钥管理或流式实现。
 
-- 桌面端：Electron、React、TypeScript。
-- 智能体服务：Python、FastAPI、Deep Agents。
-- 图像工作流：ComfyUI。
-- 模型与推理服务：Ark。
+## 当前开发拓扑
 
-## 进程与通道
+```text
+pnpm dev → Turbo → Electron Forge/Vite
+                 ↘ Uvicorn/FastAPI
+```
 
-所有请求遵循单向的受控边界：
+Turbo 并发持有这两个源码开发进程，不设置启动顺序或 health 等待。Electron Main 不启动、停止、探测或管理 FastAPI，也没有调用当前 health 端点。独立入口是 `pnpm dev:desktop` 与 `pnpm dev:server`。
+
+该拓扑不代表打包集成：packaged Python sidecar 尚未实现，当前 Electron package 不包含 Python 服务。
+
+## 批准的未来拓扑
+
+后续能力必须沿单向受控边界扩展：
 
 ```text
 Renderer → Preload → Electron Main → FastAPI → Agent Runtime → Tool → ComfyUI Adapter
 ```
 
-- Renderer 仅负责界面状态和用户交互，不直接访问系统能力或后端服务。
-- Preload 暴露经过白名单约束的 IPC API。
-- Electron Main 管理 Electron 生命周期、IPC 编排和本地服务连接。
-- FastAPI 提供本地 HTTP 与流式接口，并将任务交给 Agent Runtime。
-- Agent Runtime 负责 Deep Agents 的编排；Ark 是 Agent Runtime 调用的模型 Provider Adapter；Tool 表达可调用能力并调用 ComfyUI Adapter。
+- Renderer 仅负责界面状态和用户交互，不直接访问 Node、文件、环境变量、密钥、ComfyUI 或后端 HTTP。
+- Preload 只暴露最小、具名、类型化的 IPC API。
+- Electron Main 管理桌面权限、IPC 和受控网络边界；未来打包 sidecar 的本地服务生命周期仍需单独实现。
+- FastAPI 是未来本地 HTTP 契约边界；Agent Runtime 负责 Deep Agents 编排。
+- Ark 是 Agent Runtime 调用的模型 Provider Adapter；Tool 通过 ComfyUI Adapter 调用托管或外部 ComfyUI。
+
+未来 Ark 接入计划使用模型 `Doubao-Seed-2.1-turbo` 和基础地址 `https://ark.cn-beijing.volces.com/api/plan/v3`。仓库未提交 API Key；后续凭据只可由 Electron Main 在安全边界内管理，不得进入 Renderer、Preload、日志或测试夹具。
 
 ## 流式通信约束
 
-前后端流式响应统一使用 SSE（`text/event-stream`）。禁止以 NDJSON 作为流式协议，也不允许客户端按换行符自行推断事件边界。事件名称、负载结构与错误语义将在实现前单独固化为契约。
+未来流式响应只允许标准 SSE（`text/event-stream`）。禁止 NDJSON、逐行 JSON、自定义分隔符或依赖断连表示完成。当前没有流式端点；增量、完成、错误和取消事件必须在实现前单独定义并测试。
 
 ## 资源基线
 
-开发参考硬件为 RTX 3060 Ti 8GB VRAM（显存），优先使用远端 Ark 推理与按需调用的 ComfyUI 能力。默认未来生成基线为 `batch=1`、`768x768`、`preview=none`，并采用动态显存或 CPU offload；`1024x1024` 仅可在该目标硬件实机门禁通过后启用。系统内存另行探测和记录，不能由 8GB VRAM 推导。
+RTX 3060 Ti 8GB VRAM（显存）是未来本地模型运行时的开发参考约束，不是当前已执行的 GPU 功能或性能承诺。未来默认门禁为 `batch=1`、`768x768`、`preview=none`，并采用动态显存或 CPU offload；`1024x1024` 仅可在该目标硬件实机门禁通过后启用。系统内存另行探测和记录，不能由 8GB VRAM 推导。
 
-## 非目标
+## 验证状态
 
-- 不在 Renderer 中嵌入模型密钥、服务地址或工具执行逻辑。
-- 不把 ComfyUI 或 Ark 的协议细节暴露给 UI。
-- 不将 SSE 与 NDJSON 混用为同一条业务流的传输方式。
+Windows x64 的 Electron Forge + Vite 开发窗口、package 和 ASAR 已在本地验证。GitHub Actions 定义了 `windows-2025` x64 与 `macos-15` arm64 原生矩阵，但本任务不推送或触发外部 CI；macOS arm64 在对应 job 实际成功前保持未验证状态。

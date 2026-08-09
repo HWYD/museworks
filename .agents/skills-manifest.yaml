@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "reviewPolicy": {
+    "cadence": "monthly-or-before-major-milestone",
+    "reviewedAt": "2026-08-08",
+    "nextReviewAt": "2026-09-08",
+    "updateFlow": [
+      "stage-outside-active-skill-directories",
+      "read-complete-skill-and-direct-references",
+      "run-route-regressions",
+      "independent-review",
+      "update-exact-commit-sha"
+    ]
+  },
+  "skills": [
+    {
+      "name": "vercel-react-best-practices",
+      "source": {
+        "repository": "vercel-labs/agent-skills",
+        "path": "skills/react-best-practices",
+        "commitSha": "7c180d9044c9ae2b442b567aad4e42a28dd5ed62",
+        "installFolder": "vercel-react-best-practices"
+      },
+      "installScope": "global",
+      "triggers": ["apps/desktop/src/renderer/**"],
+      "projectOverrides": [
+        "client-only Electron Renderer",
+        "no direct HTTP or Node",
+        "React 19 project pins win"
+      ],
+      "disabledAdvice": [
+        "Next.js",
+        "RSC",
+        "SSR",
+        "server-only APIs",
+        "automatic dependency additions"
+      ],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex manual source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "enabled"
+    },
+    {
+      "name": "vercel-composition-patterns",
+      "source": {
+        "repository": "vercel-labs/agent-skills",
+        "path": "skills/composition-patterns",
+        "commitSha": "7c180d9044c9ae2b442b567aad4e42a28dd5ed62",
+        "installFolder": "vercel-composition-patterns"
+      },
+      "installScope": "global",
+      "triggers": [
+        "public Renderer component APIs",
+        "compound components",
+        "boolean-prop proliferation"
+      ],
+      "projectOverrides": ["React DOM conventions and existing component style win"],
+      "disabledAdvice": ["unrequested component rewrites", "React Native-specific examples"],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex manual source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "enabled"
+    },
+    {
+      "name": "web-design-guidelines",
+      "source": {
+        "repository": "vercel-labs/agent-skills",
+        "path": "skills/web-design-guidelines",
+        "commitSha": "7c180d9044c9ae2b442b567aad4e42a28dd5ed62",
+        "installFolder": "web-design-guidelines"
+      },
+      "installScope": "global",
+      "triggers": ["user-visible Renderer UI"],
+      "projectOverrides": ["no implicit network", "pinned reviewed rules only"],
+      "disabledAdvice": ["fetching floating main/command.md during use"],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex manual source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "quarantined"
+    },
+    {
+      "name": "fastapi",
+      "source": {
+        "repository": "fastapi/fastapi",
+        "path": "fastapi/.agents/skills/fastapi",
+        "commitSha": "15410ee4bfd14e3e5048628a0a0b54b07ac9f553",
+        "installFolder": "fastapi"
+      },
+      "installScope": "global",
+      "triggers": ["apps/agent-service/**"],
+      "projectOverrides": ["FastAPI 0.116.x API availability", "SSE-only", "uv locked workflow"],
+      "disabledAdvice": [
+        "JSON Lines",
+        "NDJSON",
+        "app.frontend",
+        "fastapi.sse APIs unless supported by the pin",
+        "automatic framework upgrade"
+      ],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex manual source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "enabled"
+    },
+    {
+      "name": "turborepo",
+      "source": {
+        "repository": "vercel/turborepo",
+        "path": "skills/turborepo",
+        "commitSha": "c21e2e2932f7134a04bc44cb2f849968ca62e3cc",
+        "installFolder": "turborepo"
+      },
+      "installScope": "global",
+      "triggers": [
+        "turbo.json",
+        "workspace tasks",
+        "package boundaries",
+        "cache inputs and outputs"
+      ],
+      "projectOverrides": [
+        "Turbo 2.2.3 feature availability",
+        "existing root governance scripts",
+        "native CI matrix"
+      ],
+      "disabledAdvice": [
+        "future flags",
+        "experimental boundaries",
+        "2.2.4+ task identifiers",
+        "canary-only commands",
+        "automatic Turbo upgrade"
+      ],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex manual source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "enabled"
+    },
+    {
+      "name": "python-testing-patterns",
+      "source": {
+        "repository": "wshobson/agents",
+        "path": "plugins/python-development/skills/python-testing-patterns",
+        "commitSha": "c4b82b0ad771190355eb8e204b1329732a18449a",
+        "installFolder": "python-testing-patterns"
+      },
+      "installScope": "global",
+      "triggers": ["apps/agent-service/tests/**", "pytest fixtures", "async Python tests"],
+      "projectOverrides": [
+        "Superpowers owns RED-GREEN-refactor",
+        "existing uv and pytest config win"
+      ],
+      "disabledAdvice": [
+        "skip or xfail to fake green",
+        "unrequested test dependencies",
+        "generic CI workflow replacement"
+      ],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex manual source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "enabled"
+    },
+    {
+      "name": "pnpm",
+      "source": {
+        "repository": "antfu/skills",
+        "path": "skills/pnpm",
+        "commitSha": "a74f281a27dadc02397bc1a174b0f2c97531b6ae",
+        "installFolder": "pnpm"
+      },
+      "installScope": "global",
+      "triggers": ["pnpm configuration", "pnpm lockfile"],
+      "projectOverrides": [
+        "pnpm 10.33.2",
+        "current .npmrc and package.json.pnpm remain authoritative"
+      ],
+      "disabledAdvice": [
+        "pnpm v11-only configuration model",
+        "claim that package.json.pnpm is ignored",
+        "claim that .npmrc is auth-only"
+      ],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex manual source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "rejected"
+    },
+    {
+      "name": "security-best-practices",
+      "source": {
+        "repository": "openai/skills",
+        "path": "skills/.curated/security-best-practices",
+        "commitSha": "49f948faa9258a0c61caceaf225e179651397431",
+        "installFolder": "security-best-practices"
+      },
+      "installScope": "global",
+      "triggers": ["explicit L2 or L3 security review"],
+      "projectOverrides": [
+        "project Electron and secret boundaries",
+        "complete reference audit required before activation"
+      ],
+      "disabledAdvice": [
+        "activation before all relevant references are reviewed",
+        "automatic report writes outside requested scope"
+      ],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex preliminary source audit",
+      "nextReviewAt": "2026-09-08",
+      "status": "quarantined"
+    },
+    {
+      "name": "museworks-best-practices-router",
+      "source": {
+        "repository": "local",
+        "path": ".agents/skills/museworks-best-practices-router",
+        "commitSha": "repository-versioned",
+        "installFolder": "museworks-best-practices-router"
+      },
+      "installScope": "project",
+      "triggers": ["all repository tasks after using-superpowers"],
+      "projectOverrides": ["authoritative project routing"],
+      "disabledAdvice": ["full-stack skill loading by default"],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex",
+      "nextReviewAt": "2026-09-08",
+      "status": "enabled"
+    },
+    {
+      "name": "museworks-electron-best-practices",
+      "source": {
+        "repository": "local",
+        "path": ".agents/skills/museworks-electron-best-practices",
+        "commitSha": "repository-versioned",
+        "installFolder": "museworks-electron-best-practices"
+      },
+      "installScope": "project",
+      "triggers": ["Electron Main", "Preload", "Forge and Vite", "IPC", "native package"],
+      "projectOverrides": ["authoritative Electron project boundary"],
+      "disabledAdvice": ["community Electron guidance that weakens project security"],
+      "reviewedAt": "2026-08-08",
+      "reviewer": "Codex",
+      "nextReviewAt": "2026-09-08",
+      "status": "enabled"
+    }
+  ]
+}

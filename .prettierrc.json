@@ -1,0 +1,15 @@
+{
+  "singleQuote": true,
+  "trailingComma": "all",
+  "printWidth": 100,
+  "semi": true,
+  "endOfLine": "auto",
+  "overrides": [
+    {
+      "files": ".agents/skills-manifest.yaml",
+      "options": {
+        "parser": "json"
+      }
+    }
+  ]
+}

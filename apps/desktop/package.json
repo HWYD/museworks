@@ -1,0 +1,42 @@
+{
+  "name": "@museworks/desktop",
+  "productName": "Museworks",
+  "version": "0.0.0",
+  "private": true,
+  "main": ".vite/build/main.js",
+  "config": {
+    "forge": "./forge.config.ts"
+  },
+  "scripts": {
+    "dev": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js start",
+    "lint": "eslint src tests --max-warnings=0",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "build": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js package",
+    "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
+    "start": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js start",
+    "package": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js package"
+  },
+  "dependencies": {
+    "@museworks/contracts": "workspace:*",
+    "electron-squirrel-startup": "1.0.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@electron-forge/maker-dmg": "7.11.2",
+    "@electron-forge/maker-squirrel": "7.11.2",
+    "@electron-forge/plugin-fuses": "7.11.2",
+    "@electron-forge/plugin-vite": "7.11.2",
+    "@electron-forge/shared-types": "7.11.2",
+    "@electron/fuses": "1.8.0",
+    "@testing-library/react": "16.3.2",
+    "@vitejs/plugin-react": "5.2.0",
+    "@types/node": "22.20.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "electron": "43.2.0",
+    "jsdom": "29.0.2",
+    "vite": "7.3.6"
+  }
+}

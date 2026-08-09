@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Museworks Electron Best Practices'
+  short_description: 'Enforce secure Electron boundaries and packaging'
+  default_prompt: 'Apply the Museworks Electron security and native packaging checklist.'
