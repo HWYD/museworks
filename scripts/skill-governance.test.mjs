@@ -153,6 +153,10 @@ test('workflow profiles scale process obligations by change level', () => {
         execution: 'inline',
         review: 'self',
         ephemeralTaskDocs: false,
+        git: {
+          stage: 'explicit-user-request-only',
+          commit: 'explicit-user-request-only',
+        },
       },
     },
     {
@@ -164,6 +168,10 @@ test('workflow profiles scale process obligations by change level', () => {
         execution: 'inline',
         review: 'self',
         ephemeralTaskDocs: false,
+        git: {
+          stage: 'explicit-user-request-only',
+          commit: 'explicit-user-request-only',
+        },
       },
     },
     {
@@ -175,6 +183,10 @@ test('workflow profiles scale process obligations by change level', () => {
         execution: 'inline',
         review: 'final-independent',
         ephemeralTaskDocs: false,
+        git: {
+          stage: 'explicit-user-request-only',
+          commit: 'explicit-user-request-only',
+        },
       },
     },
     {
@@ -186,6 +198,10 @@ test('workflow profiles scale process obligations by change level', () => {
         execution: 'subagent-driven',
         review: 'per-task-and-final',
         ephemeralTaskDocs: true,
+        git: {
+          stage: 'explicit-user-request-only',
+          commit: 'explicit-user-request-only',
+        },
       },
     },
   ];

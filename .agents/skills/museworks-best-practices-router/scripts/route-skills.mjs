@@ -23,6 +23,11 @@ function addEnabled(required, forbidden, name) {
 }
 
 function workflowForLevel(level) {
+  const git = {
+    stage: 'explicit-user-request-only',
+    commit: 'explicit-user-request-only',
+  };
+
   if (level === 'L2') {
     return {
       profile: 'standard',
@@ -31,6 +36,7 @@ function workflowForLevel(level) {
       execution: 'inline',
       review: 'final-independent',
       ephemeralTaskDocs: false,
+      git,
     };
   }
 
@@ -42,6 +48,7 @@ function workflowForLevel(level) {
       execution: 'subagent-driven',
       review: 'per-task-and-final',
       ephemeralTaskDocs: true,
+      git,
     };
   }
 
@@ -52,6 +59,7 @@ function workflowForLevel(level) {
     execution: 'inline',
     review: 'self',
     ephemeralTaskDocs: false,
+    git,
   };
 }
 

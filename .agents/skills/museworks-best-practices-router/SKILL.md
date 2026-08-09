@@ -18,7 +18,8 @@ description: Route Museworks work to the smallest audited workflow profile and s
 4. Load every `required` skill that is available. Load an `optional` skill only when its stated condition is present.
 5. Do not load or follow anything in `forbidden`. Treat a missing or quarantined required candidate as a constraint, not permission to fetch an unpinned replacement.
 6. Follow the returned `workflow` profile. Do not add design, planning, worktree, SDD, task documents, or independent review beyond that profile unless the user explicitly requests stronger governance.
-7. Continue with the routed Superpowers and domain skills. This skill narrows the workflow; it never weakens project security boundaries or completion verification.
+7. Enforce `workflow.git` for every level. Do not stage or commit unless the user directly and explicitly requests a commit of the current described changes; execution approval and plan approval are not commit authorization.
+8. Continue with the routed Superpowers and domain skills. This skill narrows the workflow; it never weakens project security boundaries or completion verification.
 
 ## Workflow Profiles
 
@@ -27,6 +28,8 @@ description: Route Museworks work to the smallest audited workflow profile and s
 - `full` (`L3`): approved design and implementation plan, isolated worktree, subagent-driven development, Git-ignored task briefs/reports, per-task review, and final independent review.
 
 An implementation plan owns its `Task N` checklist. Separate task briefs, reports, review packages, and ledgers are execution scratch created only by the full SDD profile.
+
+Every profile returns `git.stage` and `git.commit` as `explicit-user-request-only`. Plans must not add automatic commit steps. For full-profile work, override upstream subagent templates with an explicit instruction to leave changes unstaged and uncommitted and to report only the diff, verification results, and risks. A parent may pass commit authority to a subagent only after the user has explicitly granted it for the current changes.
 
 ## Conflict Order
 
@@ -49,3 +52,4 @@ Read [conflict-policy.md](references/conflict-policy.md) before applying upstrea
 - The external Web Design, pnpm, and OpenAI security candidates are not enabled. Their manifest status and audit reason are authoritative.
 - Vitest remains governed by Superpowers TDD and repository tests; no third-party Vitest workflow is loaded.
 - L2 requires one final independent code review. L3 requires approved design and planning plus per-task and final independent review.
+- Upstream frequent-commit advice cannot authorize `git add`, `git commit`, push, merge, rebase, squash, or Pull Request creation.

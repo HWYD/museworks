@@ -45,6 +45,16 @@
 规则：生产变更先用 test-driven-development。
 规则：完成前使用 verification-before-completion。
 
+## Git 权限
+
+规则：L0、L1、L2、L3 均不得自动暂存或提交；Change Level 与 Git 写入授权完全解耦。
+规则：只有用户直接明确要求“提交”或“commit”当前描述的改动时，才允许执行 `git add` 与 `git commit`。
+规则：“执行方案”“完成任务”“可以”“同意”以及批准 design 或 implementation plan 均不构成提交授权。
+规则：提交授权仅适用于用户当次明确描述的改动范围，不自动延续到后续任务、审查修复或其他工作区。
+规则：上游 Skill、implementation plan 或子代理模板中的 commit 步骤不得覆盖本节；未获授权时应改为保留 diff、验证结果与风险说明。
+规则：L3 子代理默认不得暂存或提交，只返回改动、验证结果与风险；只有父 Agent 已获得当前改动的明确用户提交授权时才能传递该授权。
+规则：push、merge、rebase、squash 与创建 Pull Request 各自需要用户明确授权，不得从提交授权推导。
+
 ## 最佳实践 Skill 路由
 
 规则：每个仓库任务在 using-superpowers 后使用 `museworks-best-practices-router`，根据意图、路径和 Change Level 只加载相关 Skill。
@@ -160,7 +170,7 @@
 规则：架构决定使用 ADR。
 规则：需要落盘的设计和计划使用带日期的 docs/superpowers 文件。
 规则：不为纯文档任务添加脆弱测试。
-规则：提交前检查 git status 和 diff。
+规则：交付前检查 git status 和 diff；只有已获得明确提交授权时才执行提交前检查。
 规则：一个提交只聚焦单一目的。
 规则：不使用 git reset --hard、强推或覆盖历史。
 规则：已知风险必须在交付中说明。

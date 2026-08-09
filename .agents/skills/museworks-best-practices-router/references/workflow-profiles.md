@@ -53,6 +53,16 @@ L2 提交一份精简计划，使用隔离 worktree，默认直接实施并执�
 
 L3 必须先获得用户批准，完成 design 和 implementation plan，使用隔离 worktree 与 subagent-driven-development，执行逐任务和最终独立审查，并记录回滚或恢复方式。`Task N` 保留在 implementation plan；task brief、task report、review package 和 progress ledger 只存在于 Git 忽略的 SDD workspace。
 
+## Git 权限
+
+所有等级的 `workflow.git.stage` 与 `workflow.git.commit` 都是 `explicit-user-request-only`。Change Level、流程批准和任务完成状态不能产生 Git 写入授权。
+
+只有用户直接明确要求“提交”或“commit”当前描述的改动时，Agent 才能执行 `git add` 与 `git commit`。“执行方案”“完成任务”“可以”“同意”以及批准 design 或 implementation plan 都不是提交授权。授权只覆盖当次明确描述的改动，不延续到后续任务、审查修复或其他 worktree。
+
+implementation plan 不得生成自动提交步骤。L3 使用 subagent-driven-development 时，父 Agent 必须覆盖上游模板，要求子代理不暂存、不提交，只返回 diff、验证结果与风险；只有父 Agent 已获得当前改动的明确用户提交授权时才能传递该授权。历史计划中的 commit 步骤只是历史记录，不构成当前授权。
+
+push、merge、rebase、squash 与创建 Pull Request 均需要各自明确授权。项目不使用 Git hook 强制本规则，因为 hook 无法判断对话授权并会干扰开发者正常提交。
+
 ## 用户覆盖
 
 用户可以明确要求更强的计划、隔离或审查。除非用户明确要求，Agent 不得因个人偏好把 L0/L1 升级为完整流程。用户要求不能降低项目安全红线。

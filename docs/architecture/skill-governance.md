@@ -33,6 +33,8 @@ using-superpowers
 
 implementation plan 的 `Task N` 是正式任务清单。`task-N-brief.md`、`task-N-report.md`、review package 和 progress ledger 是仅供 full profile 使用的 Git 忽略 SDD 临时产物。完整的影响维度与 L2/L3 强制触发器位于 Router 的 `references/workflow-profiles.md`。
 
+Git 提交权限独立于 workflow profile。L0 至 L3 都只在用户直接明确要求提交当前改动时允许暂存和提交；执行任务、完成任务或批准计划不构成授权。上游 frequent-commit 建议和子代理模板由项目规则覆盖，未获授权的实施结果以未暂存 diff、验证结果和风险说明交付。push、merge、rebase、squash 与创建 Pull Request 仍分别需要明确授权。
+
 ## 上游审核结果
 
 所有候选在临时隔离目录中以固定 commit 获取，完整阅读 `SKILL.md`；启用候选还阅读了其直接引用材料。skills.sh 的公开扫描只作为线索，人工源码审核才决定状态。
