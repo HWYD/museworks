@@ -19,7 +19,7 @@ Museworks 当前是一个可运行、可测试的本地优先桌面生图 Agent 
 - Node.js `22.22.2`
 - pnpm `10.33.2`
 - Python `3.12`
-- uv `0.11.32`
+- uv `0.11.32`：运行任何会进入 Python workspace 的根命令前，`uv --version` 必须能从 `PATH` 解析并显示 `uv 0.11.32`。
 
 ```powershell
 corepack enable
@@ -30,11 +30,22 @@ uv sync --project apps/agent-service --group test --locked
 
 ## 运行与验证
 
-启动桌面开发壳：
+主要开发入口：
 
 ```powershell
-pnpm --filter @museworks/desktop --fail-if-no-match start
+# Electron + FastAPI
+pnpm dev
+
+# FastAPI only
+pnpm dev:agent
+
+# Electron only; does not start or wait for FastAPI
+pnpm dev:desktop
 ```
+
+`pnpm dev` 由 Turbo 并发启动 Electron Forge/Vite 与 Uvicorn/FastAPI；两个任务没有启动顺序或就绪等待。Electron Main 当前不等待、探测或管理 FastAPI。默认 health 地址是 `http://127.0.0.1:8765/v1/health`；可在启动前用 `MUSEWORKS_AGENT_PORT` 将服务端口覆盖为 `1..65535` 的 ASCII 十进制值。对上述根命令按 Ctrl+C 是正常的开发关闭方式。
+
+这些命令只描述源码开发态。packaged Python sidecar 尚未实现，当前 Electron package 不包含或启动 Python 服务。
 
 运行完整本地检查：
 

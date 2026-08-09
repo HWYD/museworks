@@ -2,7 +2,24 @@
 
 ## 当前工程入口
 
-当前可运行范围只有类型化 app-info 桌面壳与 FastAPI health 契约。安装、检查和打包使用：
+当前可运行范围只有类型化 app-info 桌面壳与 FastAPI health 契约。任何会进入 Python workspace 的根命令运行前，`uv --version` 必须能从 `PATH` 解析并显示 `uv 0.11.32`。
+
+从仓库根目录启动：
+
+```powershell
+# Electron + FastAPI
+pnpm dev
+
+# FastAPI only
+pnpm dev:agent
+
+# Electron only; does not start or wait for FastAPI
+pnpm dev:desktop
+```
+
+`pnpm dev` 通过 Turbo 并发持有 Electron Forge/Vite 与 Uvicorn/FastAPI 两个长运行任务，不设置启动顺序或就绪等待。Electron Main 不等待、探测或管理 FastAPI。默认 health 地址是 `http://127.0.0.1:8765/v1/health`；`MUSEWORKS_AGENT_PORT` 可将端口覆盖为 `1..65535` 的 ASCII 十进制值。按 Ctrl+C 是这些根开发命令的正常关闭方式。
+
+安装、检查和打包使用：
 
 ```powershell
 corepack prepare pnpm@10.33.2 --activate
@@ -15,12 +32,18 @@ pnpm test
 pnpm check
 pnpm verify:boundaries
 pnpm verify:skills
-uv run --project apps/agent-service --group test --locked pytest apps/agent-service/tests -q
-pnpm --filter @museworks/desktop --fail-if-no-match start
 pnpm --filter @museworks/desktop --fail-if-no-match package
+node scripts/verify-packaged-asar.mjs
 ```
 
-Electron Forge + Vite 是唯一桌面构建路径，不添加 Webpack 源码、配置或直接依赖。Windows x64 的 GUI/package 已本地验证；macOS arm64 必须以 GitHub Actions 的原生 job 成功为准，目前未验证。
+`pnpm test` 通过 `@museworks/agent-service` workspace 桥接执行 locked pytest；`pnpm check` 也通过同一桥接执行 Python tests 和 `uv lock --check`。直接运行下面的 uv 命令适合聚焦排查 Python 测试或锁文件问题，不是第二套必需的完整仓库检查路径：
+
+```powershell
+uv run --project apps/agent-service --group test --locked pytest apps/agent-service/tests -q
+uv lock --project apps/agent-service --check
+```
+
+Electron Forge + Vite 是唯一桌面构建路径，不添加 Webpack 源码、配置或直接依赖。当前 package 不包含或启动 Python 服务；packaged Python sidecar 尚未实现。Windows x64 的 GUI/package 已本地验证；macOS arm64 必须以 GitHub Actions 的原生 job 成功为准，目前未验证。
 
 ## Skill 路由
 

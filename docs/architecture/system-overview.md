@@ -9,6 +9,17 @@ Museworks 当前是桌面端 AI 创作工程骨架，不是已具备生图能力
 - 桌面端只使用 Electron Forge + Vite 构建。源码、配置和直接依赖不使用 Webpack；Forge CLI 自身可能包含未使用的模板传递依赖。
 - 当前没有 `/v1/run`、生成、Ark、Deep Agents、ComfyUI、本地模型、密钥管理或流式实现。
 
+## 当前开发拓扑
+
+```text
+pnpm dev → Turbo → Electron Forge/Vite
+                 ↘ Uvicorn/FastAPI
+```
+
+Turbo 并发持有这两个源码开发进程，不设置启动顺序或 health 等待。Electron Main 不启动、停止、探测或管理 FastAPI，也没有调用当前 health 端点。独立入口是 `pnpm dev:desktop` 与 `pnpm dev:agent`。
+
+该拓扑不代表打包集成：packaged Python sidecar 尚未实现，当前 Electron package 不包含 Python 服务。
+
 ## 批准的未来拓扑
 
 后续能力必须沿单向受控边界扩展：
@@ -19,7 +30,7 @@ Renderer → Preload → Electron Main → FastAPI → Agent Runtime → Tool �
 
 - Renderer 仅负责界面状态和用户交互，不直接访问 Node、文件、环境变量、密钥、ComfyUI 或后端 HTTP。
 - Preload 只暴露最小、具名、类型化的 IPC API。
-- Electron Main 管理桌面权限、IPC、本地服务生命周期和受控网络边界。
+- Electron Main 管理桌面权限、IPC 和受控网络边界；未来打包 sidecar 的本地服务生命周期仍需单独实现。
 - FastAPI 是未来本地 HTTP 契约边界；Agent Runtime 负责 Deep Agents 编排。
 - Ark 是 Agent Runtime 调用的模型 Provider Adapter；Tool 通过 ComfyUI Adapter 调用托管或外部 ComfyUI。
 
