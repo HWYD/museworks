@@ -31,18 +31,16 @@ test('runs the bootstrap gates on the approved native CI matrix', () => {
   );
 
   assert.deepEqual(
-    [
-      ...workflow.matchAll(
-        /uses:\s*((?:actions\/(?:checkout|setup-node|setup-python)|astral-sh\/setup-uv)@v\d+)/g,
-      ),
-    ].map((match) => match[1]),
-    [
-      'actions/checkout@v7',
-      'actions/setup-node@v6',
-      'actions/setup-python@v6',
-      'astral-sh/setup-uv@v9',
-    ],
+    [...workflow.matchAll(/uses:\s*(actions\/(?:checkout|setup-node|setup-python)@v\d+)/g)].map(
+      (match) => match[1],
+    ),
+    ['actions/checkout@v7', 'actions/setup-node@v6', 'actions/setup-python@v6'],
   );
+  assert.match(
+    workflow,
+    /uses:\s*astral-sh\/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9\s*# v9\.0\.0/,
+  );
+  assert.doesNotMatch(workflow, /uses:\s*astral-sh\/setup-uv@v9(?:\s|$)/m);
 
   assert.match(workflow, /node-version:\s*['"]?22\.22\.2['"]?/);
   assert.match(workflow, /corepack prepare pnpm@10\.33\.2 --activate/);
