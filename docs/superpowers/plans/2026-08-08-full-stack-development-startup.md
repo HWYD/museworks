@@ -43,7 +43,7 @@
 
 ---
 
-### 任务 1：添加可执行的 FastAPI 服务入口
+### Task 1：添加可执行的 FastAPI 服务入口
 
 **文件：**
 
@@ -236,7 +236,7 @@ git commit -m "feat: add agent service entrypoint"
 
 ---
 
-### 任务 2：将 Python 开发任务接入 pnpm 与 Turbo
+### Task 2：将 Python 开发任务接入 pnpm 与 Turbo
 
 **文件：**
 
@@ -463,7 +463,7 @@ git commit -m "feat: orchestrate full-stack development"
 
 ---
 
-### 任务 3：记录并证明全栈开发体验
+### Task 3：记录并证明全栈开发体验
 
 **文件：**
 
