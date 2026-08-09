@@ -16,7 +16,7 @@ pnpm dev → Turbo → Electron Forge/Vite
                  ↘ Uvicorn/FastAPI
 ```
 
-Turbo 并发持有这两个源码开发进程，不设置启动顺序或 health 等待。Electron Main 不启动、停止、探测或管理 FastAPI，也没有调用当前 health 端点。独立入口是 `pnpm dev:desktop` 与 `pnpm dev:agent`。
+Turbo 并发持有这两个源码开发进程，不设置启动顺序或 health 等待。Electron Main 不启动、停止、探测或管理 FastAPI，也没有调用当前 health 端点。独立入口是 `pnpm dev:desktop` 与 `pnpm dev:server`。
 
 该拓扑不代表打包集成：packaged Python sidecar 尚未实现，当前 Electron package 不包含 Python 服务。
 

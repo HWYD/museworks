@@ -61,9 +61,10 @@ test('defines Turbo-owned full-stack development entrypoints', () => {
 
   assert.equal(rootManifest.scripts.dev, 'turbo run dev');
   assert.equal(
-    rootManifest.scripts['dev:agent'],
+    rootManifest.scripts['dev:server'],
     'turbo run dev --filter=@museworks/agent-service',
   );
+  assert.equal(rootManifest.scripts['dev:agent'], undefined);
   assert.equal(rootManifest.scripts['dev:desktop'], 'turbo run dev --filter=@museworks/desktop');
   assert.deepEqual(rootTurbo.tasks.dev, { cache: false, persistent: true });
   assert.equal(desktopManifest.scripts.dev, desktopManifest.scripts.start);

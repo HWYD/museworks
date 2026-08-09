@@ -11,7 +11,7 @@
 pnpm dev
 
 # FastAPI only
-pnpm dev:agent
+pnpm dev:server
 
 # Electron only; does not start or wait for FastAPI
 pnpm dev:desktop
