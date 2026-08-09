@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import { routeSkills } from '../.agents/skills/museworks-best-practices-router/scripts/route-skills.mjs';
@@ -344,6 +347,36 @@ test('standalone verifier resolves project skill metadata from the repository', 
 
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Skill governance verified/);
+});
+
+test('standalone verifier accepts project skill metadata checked out with CRLF', async () => {
+  const temporaryRoot = await mkdtemp(join(tmpdir(), 'museworks-skill-governance-'));
+
+  try {
+    await cp('.agents', join(temporaryRoot, '.agents'), { recursive: true });
+    await mkdir(join(temporaryRoot, 'scripts'));
+    await cp(
+      'scripts/verify-skill-governance.mjs',
+      join(temporaryRoot, 'scripts', 'verify-skill-governance.mjs'),
+    );
+
+    for (const name of ['museworks-best-practices-router', 'museworks-electron-best-practices']) {
+      const skillPath = join(temporaryRoot, '.agents', 'skills', name, 'SKILL.md');
+      const skillText = await readFile(skillPath, 'utf8');
+      await writeFile(skillPath, skillText.replace(/\r?\n/g, '\r\n'), 'utf8');
+    }
+
+    const result = spawnSync(
+      process.execPath,
+      [join(temporaryRoot, 'scripts', 'verify-skill-governance.mjs')],
+      { cwd: temporaryRoot, encoding: 'utf8' },
+    );
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, /Skill governance verified/);
+  } finally {
+    await rm(temporaryRoot, { recursive: true, force: true });
+  }
 });
 
 test('manifest validation rejects a missing project router entry', async () => {

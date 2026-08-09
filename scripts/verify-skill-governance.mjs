@@ -98,7 +98,8 @@ async function validateProjectSkillFiles() {
       }
     }
     const skillText = await readFile(resolve(directory, 'SKILL.md'), 'utf8').catch(() => '');
-    if (!skillText.startsWith(`---\nname: ${name}\n`)) {
+    const normalizedSkillText = skillText.replace(/\r\n/g, '\n');
+    if (!normalizedSkillText.startsWith(`---\nname: ${name}\n`)) {
       errors.push(`${name}: SKILL.md frontmatter name must match its directory`);
     }
   }
