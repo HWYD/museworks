@@ -2,7 +2,7 @@
 
 ## 当前工程入口
 
-当前可运行范围只有类型化 app-info 桌面壳与 FastAPI health 契约。任何会进入 Python workspace 的根命令运行前，`uv --version` 必须能从 `PATH` 解析并显示 `uv 0.11.32`。
+当前可运行范围只有类型化 app-info 桌面壳与 FastAPI health 契约。uv `0.11.32` 仍需预先安装，项目不会下载或升级 uv。进入 Python workspace 的根 pnpm 命令优先从 `PATH` 解析 uv，以支持 WinGet、Scoop、CI 和自定义安装目录；Windows 在 `PATH` 缺失时还会检查 `%USERPROFILE%\.local\bin\uv.exe`。因此当前 shell 不必在每个根命令前直接成功运行 `uv --version`；两处都找不到 uv 时会返回包含要求版本与官方安装文档的可操作错误。
 
 从仓库根目录启动：
 

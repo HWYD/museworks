@@ -68,10 +68,10 @@ test('defines Turbo-owned full-stack development entrypoints', () => {
   assert.deepEqual(rootTurbo.tasks.dev, { cache: false, persistent: true });
   assert.equal(desktopManifest.scripts.dev, desktopManifest.scripts.start);
   assert.deepEqual(agentManifest.scripts, {
-    dev: 'uv run --locked museworks-agent --reload',
-    start: 'uv run --locked museworks-agent',
-    test: 'uv run --group test --locked pytest tests -q',
-    check: 'uv lock --check',
+    dev: 'node ../../scripts/run-uv.mjs run --locked museworks-agent --reload',
+    start: 'node ../../scripts/run-uv.mjs run --locked museworks-agent',
+    test: 'node ../../scripts/run-uv.mjs run --group test --locked pytest tests -q',
+    check: 'node ../../scripts/run-uv.mjs lock --check',
   });
   assert.equal(agentManifest.private, true);
   assert.deepEqual(agentTurbo, {
