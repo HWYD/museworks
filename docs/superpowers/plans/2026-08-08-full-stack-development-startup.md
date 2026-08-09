@@ -1,66 +1,66 @@
-# Full-Stack Development Startup Implementation Plan
+# 全栈开发启动实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **面向 Agent 执行者：** 必须使用 `superpowers:subagent-driven-development`（推荐）或 `superpowers:executing-plans`，逐任务执行本计划。步骤使用 checkbox（`- [ ]`）跟踪。
 
-**Goal:** Make `pnpm dev` start the Electron Forge + Vite desktop and the FastAPI/Uvicorn service together through Turbo, while retaining independent desktop and backend development commands.
+**目标：** 让 `pnpm dev` 通过 Turbo 同时启动 Electron Forge + Vite 桌面端和 FastAPI/Uvicorn 服务，并保留可独立启动桌面端或后端的开发命令。
 
-**Architecture:** Add a real Uvicorn console entry to the Python package, then expose the Python tasks to pnpm/Turbo through a private workspace bridge package. Turbo owns both development processes without ordering or readiness checks; Electron Main remains unchanged and does not manage, spawn, or probe FastAPI in this phase.
+**架构：** 为 Python 包添加真实的 Uvicorn 命令行入口，再通过私有 workspace 桥接包将 Python 任务接入 pnpm/Turbo。Turbo 持有两个开发进程，不设置启动顺序或就绪检查；本阶段 Electron Main 保持不变，不管理、启动或探测 FastAPI。
 
-**Tech Stack:** Node 22.22.2, pnpm 10.33.2, Turbo 2.2.3, Electron 43.2.0, Electron Forge 7.11.2, Vite 7.3.6, Python 3.12, uv 0.11.32, FastAPI 0.116.x, Uvicorn, pytest 8.4.x, Node test runner, GitHub Actions.
+**技术栈：** Node 22.22.2、pnpm 10.33.2、Turbo 2.2.3、Electron 43.2.0、Electron Forge 7.11.2、Vite 7.3.6、Python 3.12、uv 0.11.32、FastAPI 0.116.x、Uvicorn、pytest 8.4.x、Node test runner、GitHub Actions。
 
-## Global Constraints
+## 全局约束
 
-- Work in the existing linked worktree `D:\code\mine\museworks\.worktrees\project-bootstrap`; do not create another nested worktree.
-- Preserve exact Node, pnpm, Turbo, Electron, Forge, Vite, React, FastAPI, and Vitest versions already locked by the repository.
-- Add only the Uvicorn runtime dependency required to serve the existing FastAPI app; do not add a second process supervisor or `concurrently`.
-- `pnpm dev` must use `turbo run dev` without `--parallel`; both package tasks are persistent and uncached.
-- Turbo owns both development processes. Electron Main must not spawn, stop, health-check, wait for, or connect to FastAPI in this phase.
-- FastAPI listens only on `127.0.0.1`; the default port is `8765`, and only `MUSEWORKS_AGENT_PORT` may override it with an ASCII decimal value in `1..65535`.
-- Preserve `/v1/health` exactly and keep `/v1/run` unavailable. Do not add SSE, NDJSON, Ark, Deep Agents, ComfyUI, model, IPC, or Renderer HTTP behavior.
-- The Python workspace bridge must not claim nonexistent lint, typecheck, or build gates. It provides only `dev`, `start`, `test`, and `check`.
-- Keep CI permissions read-only, use the existing native Windows x64/macOS arm64 matrix, and do not add upload, publish, release, signing, or secrets.
-- Every production behavior change follows RED → GREEN. Documentation-only changes use readability, formatting, and `git diff --check` instead of brittle content tests.
-- Each implementation task receives its own independent review; the complete L2 change receives a final independent code review before completion.
+- 在现有 linked worktree `D:\code\mine\museworks\.worktrees\project-bootstrap` 中工作；不得再创建嵌套 worktree。
+- 保持仓库已锁定的 Node、pnpm、Turbo、Electron、Forge、Vite、React、FastAPI 与 Vitest 精确版本不变。
+- 只添加服务现有 FastAPI app 所需的 Uvicorn 运行时依赖；不得添加第二套进程管理器或 `concurrently`。
+- `pnpm dev` 必须使用不带 `--parallel` 的 `turbo run dev`；两个包任务都必须是 persistent 且不缓存。
+- Turbo 是两个开发进程的唯一所有者。本阶段 Electron Main 不得 spawn、stop、health-check、等待或连接 FastAPI。
+- FastAPI 只能监听 `127.0.0.1`；默认端口是 `8765`，仅允许 `MUSEWORKS_AGENT_PORT` 以 `1..65535` 的 ASCII 十进制值覆盖。
+- 严格保持 `/v1/health`，并让 `/v1/run` 继续不可用。不得增加 SSE、NDJSON、Ark、Deep Agents、ComfyUI、模型、IPC 或 Renderer HTTP 行为。
+- Python workspace 桥接包不得声明不存在的 `lint`、`typecheck` 或 `build` 门禁；只提供 `dev`、`start`、`test` 与 `check`。
+- 保持 CI 只读权限、现有原生 Windows x64/macOS arm64 matrix，不添加上传、发布、release、签名或 secrets。
+- 每项生产行为变更均遵循 RED → GREEN。纯文档变更使用可读性、格式检查与 `git diff --check`，不添加脆弱的内容测试。
+- 每个实现任务完成后都要独立审查；完整 L2 变更交付前还必须通过最终独立代码审查。
 
-## File Map
+## 文件映射
 
-- Create `apps/agent-service/src/museworks_agent/cli.py`: validate runtime configuration and invoke Uvicorn for the existing FastAPI app.
-- Create `apps/agent-service/tests/test_cli.py`: unit-test the Python entry, loopback host, reload flag, default/overridden port, and invalid port failures.
-- Modify `apps/agent-service/pyproject.toml`: add Uvicorn and the `museworks-agent` console entry.
-- Modify `apps/agent-service/uv.lock`: lock the new runtime dependency.
-- Create `apps/agent-service/package.json`: private pnpm/Turbo bridge for Python `dev`, `start`, `test`, and `check` tasks.
-- Create `apps/agent-service/turbo.json`: scope `MUSEWORKS_AGENT_PORT` to the agent-service `dev` task.
-- Modify `apps/desktop/package.json`: add `dev` as the existing Forge `start` command while retaining `start`.
-- Modify `package.json`: add root full-stack and filtered development commands and format the new workspace JSON.
-- Modify `turbo.json`: declare the uncached persistent `dev` task.
-- Modify `pnpm-lock.yaml`: register the new workspace importer without adding Node runtime dependencies.
-- Modify `scripts/workspace-config.test.mjs`: contract-test all root/package/Turbo development commands and task boundaries.
-- Modify `scripts/ci-workflow.test.mjs`: require Python/uv setup before Turbo tests and forbid the now-duplicated standalone pytest step.
-- Modify `.github/workflows/ci.yml`: install/sync Python before root Turbo gates and let `pnpm test` own pytest execution.
-- Modify `README.md`: document `pnpm dev`, independent commands, default address, and current scope.
-- Modify `docs/architecture/system-overview.md`: record Turbo-owned development processes and the absence of Main lifecycle management.
-- Modify `docs/architecture/development-workflow.md`: document installation, startup, shutdown, and verification commands.
+- 新建 `apps/agent-service/src/museworks_agent/cli.py`：校验运行时配置并为现有 FastAPI app 调用 Uvicorn。
+- 新建 `apps/agent-service/tests/test_cli.py`：单测 Python 入口、loopback host、reload flag、默认/覆盖端口和非法端口失败。
+- 修改 `apps/agent-service/pyproject.toml`：添加 Uvicorn 与 `museworks-agent` 命令行入口。
+- 修改 `apps/agent-service/uv.lock`：锁定新增运行时依赖。
+- 新建 `apps/agent-service/package.json`：为 Python 的 `dev`、`start`、`test`、`check` 提供私有 pnpm/Turbo bridge。
+- 新建 `apps/agent-service/turbo.json`：将 `MUSEWORKS_AGENT_PORT` 作用域限定为 agent-service 的 `dev` 任务。
+- 修改 `apps/desktop/package.json`：添加与现有 Forge `start` 一致的 `dev`，同时保留 `start`。
+- 修改 `package.json`：添加根全栈与过滤后的开发命令，并将新 workspace JSON 纳入格式检查。
+- 修改 `turbo.json`：声明不缓存的 persistent `dev` 任务。
+- 修改 `pnpm-lock.yaml`：注册新 workspace importer，不添加 Node 运行时依赖。
+- 修改 `scripts/workspace-config.test.mjs`：契约测试全部 root/package/Turbo 开发命令和任务边界。
+- 修改 `scripts/ci-workflow.test.mjs`：要求 Python/uv setup 位于 Turbo 测试前，并禁止已重复的独立 pytest step。
+- 修改 `.github/workflows/ci.yml`：在根 Turbo gates 前安装/同步 Python，让 `pnpm test` 负责 pytest 执行。
+- 修改 `README.md`：记录 `pnpm dev`、独立命令、默认地址和当前范围。
+- 修改 `docs/architecture/system-overview.md`：记录 Turbo 持有开发进程，Main 不管理服务生命周期。
+- 修改 `docs/architecture/development-workflow.md`：记录安装、启动、关闭和验证命令。
 
 ---
 
-### Task 1: Add the executable FastAPI service entry
+### 任务 1：添加可执行的 FastAPI 服务入口
 
-**Files:**
+**文件：**
 
-- Create: `apps/agent-service/src/museworks_agent/cli.py`
-- Create: `apps/agent-service/tests/test_cli.py`
-- Modify: `apps/agent-service/pyproject.toml`
-- Modify: `apps/agent-service/uv.lock`
+- 新建：`apps/agent-service/src/museworks_agent/cli.py`
+- 新建：`apps/agent-service/tests/test_cli.py`
+- 修改：`apps/agent-service/pyproject.toml`
+- 修改：`apps/agent-service/uv.lock`
 
-**Interfaces:**
+**接口：**
 
-- Consumes: `museworks_agent.main:app`, the existing `/v1/health` contract, Python 3.12, and uv 0.11.32.
-- Produces: `parse_port(value: str | None) -> int`, `main(argv: Sequence[str] | None = None) -> None`, and the console command `museworks-agent [--reload]`.
-- Runtime constants: `HOST = "127.0.0.1"`, `DEFAULT_PORT = 8765`, `PORT_ENV = "MUSEWORKS_AGENT_PORT"`.
+- 消费：`museworks_agent.main:app`、既有 `/v1/health` 契约、Python 3.12 与 uv 0.11.32。
+- 产出：`parse_port(value: str | None) -> int`、`main(argv: Sequence[str] | None = None) -> None`，以及 console command `museworks-agent [--reload]`。
+- 运行时常量：`HOST = "127.0.0.1"`、`DEFAULT_PORT = 8765`、`PORT_ENV = "MUSEWORKS_AGENT_PORT"`。
 
-- [ ] **Step 1: Write the failing CLI tests**
+- [ ] **步骤 1：编写失败的 CLI 测试**
 
-Create `apps/agent-service/tests/test_cli.py` with these observable contracts:
+创建 `apps/agent-service/tests/test_cli.py`，包含以下可观察契约：
 
 ```python
 import pytest
@@ -115,19 +115,19 @@ def test_main_exits_nonzero_for_an_invalid_environment_port(
     assert error.value.code == 2
 ```
 
-- [ ] **Step 2: Run the focused test and capture RED**
+- [ ] **步骤 2：运行聚焦测试并记录 RED**
 
-Run:
+运行：
 
 ```powershell
 uv run --project apps/agent-service --group test --locked pytest apps/agent-service/tests/test_cli.py -q
 ```
 
-Expected: FAIL during collection because `museworks_agent.cli` does not exist. Do not weaken the import or skip the test.
+预期：在收集测试时因 `museworks_agent.cli` 不存在而 FAIL。不得弱化 import 或跳过该测试。
 
-- [ ] **Step 3: Add and lock the runtime dependency and console entry**
+- [ ] **步骤 3：添加并锁定运行时依赖与命令行入口**
 
-Update `apps/agent-service/pyproject.toml` so the project section contains the existing FastAPI constraint plus Uvicorn and an explicit console script:
+更新 `apps/agent-service/pyproject.toml`，使 project section 包含既有 FastAPI constraint、Uvicorn 和明确的 console script：
 
 ```toml
 [project]
@@ -141,18 +141,18 @@ dependencies = ["fastapi>=0.116,<0.117", "uvicorn>=0.35,<0.36"]
 museworks-agent = "museworks_agent.cli:main"
 ```
 
-Regenerate and sync the locked environment:
+重新生成并同步锁定环境：
 
 ```powershell
 uv lock --project apps/agent-service
 uv sync --project apps/agent-service --group test --locked
 ```
 
-Expected: both commands PASS; `uv.lock` contains Uvicorn and still resolves FastAPI within `>=0.116,<0.117`.
+预期：两个命令均 PASS；`uv.lock` 包含 Uvicorn，且 FastAPI 继续解析到 `>=0.116,<0.117` 范围内。
 
-- [ ] **Step 4: Implement the minimal validated CLI**
+- [ ] **步骤 4：实现最小、可校验的 CLI**
 
-Create `apps/agent-service/src/museworks_agent/cli.py`:
+创建 `apps/agent-service/src/museworks_agent/cli.py`：
 
 ```python
 from __future__ import annotations
@@ -201,21 +201,21 @@ if __name__ == "__main__":
     main()
 ```
 
-Do not add a configurable host, shell execution, health wait, credential handling, or a second FastAPI app.
+不得添加可配置 host、shell execution、health wait、credential handling，或第二个 FastAPI app。
 
-- [ ] **Step 5: Run CLI tests and capture GREEN**
+- [ ] **步骤 5：运行 CLI 测试并记录 GREEN**
 
-Run:
+运行：
 
 ```powershell
 uv run --project apps/agent-service --group test --locked pytest apps/agent-service/tests/test_cli.py -q
 ```
 
-Expected: all CLI tests PASS with no warnings about an unknown console entry.
+预期：全部 CLI 测试 PASS，且没有未知命令行入口警告。
 
-- [ ] **Step 6: Re-run the complete Python contract suite**
+- [ ] **步骤 6：重跑完整 Python 契约测试**
 
-Run:
+运行：
 
 ```powershell
 uv run --project apps/agent-service --group test --locked pytest apps/agent-service/tests -q
@@ -223,42 +223,42 @@ uv lock --project apps/agent-service --check
 git diff --check
 ```
 
-Expected: CLI tests and both existing health tests PASS; `/v1/run` remains 404; the lock check and diff check PASS.
+预期：CLI 测试和两个既有 health 测试均 PASS；`/v1/run` 继续为 404；lock check 与 diff check 均 PASS。
 
-- [ ] **Step 7: Commit the executable service entry**
+- [ ] **步骤 7：提交可执行服务入口**
 
 ```powershell
 git add apps/agent-service/pyproject.toml apps/agent-service/uv.lock apps/agent-service/src/museworks_agent/cli.py apps/agent-service/tests/test_cli.py
 git commit -m "feat: add agent service entrypoint"
 ```
 
-Request an independent review of this task before Task 2. The reviewer must specifically check loopback-only binding, ASCII/range validation, reload isolation, no `/v1/run`, and no credential path.
+进入任务 2 前请求独立审查。本任务 reviewer 必须特别检查 loopback-only binding、ASCII/range validation、reload isolation、没有 `/v1/run`，以及没有 credential path。
 
 ---
 
-### Task 2: Integrate Python development tasks into pnpm and Turbo
+### 任务 2：将 Python 开发任务接入 pnpm 与 Turbo
 
-**Files:**
+**文件：**
 
-- Create: `apps/agent-service/package.json`
-- Create: `apps/agent-service/turbo.json`
-- Modify: `apps/desktop/package.json`
-- Modify: `package.json`
-- Modify: `turbo.json`
-- Modify: `pnpm-lock.yaml`
-- Modify: `scripts/workspace-config.test.mjs`
-- Modify: `scripts/ci-workflow.test.mjs`
-- Modify: `.github/workflows/ci.yml`
+- 新建：`apps/agent-service/package.json`
+- 新建：`apps/agent-service/turbo.json`
+- 修改：`apps/desktop/package.json`
+- 修改：`package.json`
+- 修改：`turbo.json`
+- 修改：`pnpm-lock.yaml`
+- 修改：`scripts/workspace-config.test.mjs`
+- 修改：`scripts/ci-workflow.test.mjs`
+- 修改：`.github/workflows/ci.yml`
 
-**Interfaces:**
+**接口：**
 
-- Consumes: Task 1 console command `museworks-agent [--reload]` and the existing desktop Forge `start` command.
-- Produces: root `pnpm dev`, `pnpm dev:agent`, and `pnpm dev:desktop`; Turbo tasks `@museworks/agent-service#dev` and `@museworks/desktop#dev`.
-- Python bridge scripts: `dev`, `start`, `test`, `check`; no `lint`, `typecheck`, or `build`.
+- 消费：任务 1 的 console command `museworks-agent [--reload]` 与现有 desktop Forge `start` command。
+- 产出：根 `pnpm dev`、`pnpm dev:agent` 和 `pnpm dev:desktop`；Turbo tasks `@museworks/agent-service#dev` 与 `@museworks/desktop#dev`。
+- Python bridge scripts：`dev`、`start`、`test`、`check`；不得有 `lint`、`typecheck` 或 `build`。
 
-- [ ] **Step 1: Add failing workspace and CI orchestration assertions**
+- [ ] **步骤 1：添加失败的 workspace 与 CI 编排断言**
 
-Extend `scripts/workspace-config.test.mjs` with a new test that reads `apps/agent-service/package.json`, `apps/agent-service/turbo.json`, `apps/desktop/package.json`, the root manifest, and root `turbo.json`, then asserts:
+扩展 `scripts/workspace-config.test.mjs`，添加一个读取 `apps/agent-service/package.json`、`apps/agent-service/turbo.json`、desktop manifest、root manifest 与 root `turbo.json` 的测试，断言：
 
 ```js
 test('defines Turbo-owned full-stack development entrypoints', () => {
@@ -293,9 +293,9 @@ test('defines Turbo-owned full-stack development entrypoints', () => {
 });
 ```
 
-Update the existing exact `format:check` assertion so it expects `"apps/**/*.{json,ts,tsx,css,html}"` instead of the desktop-only glob.
+更新既有精确 `format:check` 断言：期望 `"apps/**/*.{json,ts,tsx,css,html}"`，替换 desktop-only glob。
 
-Extend `scripts/ci-workflow.test.mjs` to assert that the `Set up Python`, `Set up uv`, and `Sync Python dependencies` steps appear before the root `pnpm test`, and that the workflow no longer invokes pytest directly:
+扩展 `scripts/ci-workflow.test.mjs`，断言 `Set up Python`、`Set up uv`、`Sync Python dependencies` steps 位于根 `pnpm test` 前，且 workflow 不再直接调用 pytest：
 
 ```js
 const pythonSetup = workflow.indexOf('- name: Set up Python');
@@ -309,21 +309,21 @@ assert.ok(pythonSync > uvSetup && pythonSync < turboTest);
 assert.doesNotMatch(workflow, /uv run .*pytest/);
 ```
 
-Keep the existing assertions for exact action majors, uv 0.11.32, Python 3.12, permissions, native matrix, package, and ASAR.
+保留对精确 action majors、uv 0.11.32、Python 3.12、permissions、native matrix、package 与 ASAR 的既有断言。
 
-- [ ] **Step 2: Run orchestration tests and capture RED**
+- [ ] **步骤 2：运行编排测试并记录 RED**
 
-Run:
+运行：
 
 ```powershell
 node --test scripts/workspace-config.test.mjs scripts/ci-workflow.test.mjs
 ```
 
-Expected: FAIL because `apps/agent-service/package.json` and `turbo.json` do not exist, root/desktop `dev` scripts are absent, and Python setup currently follows `pnpm test`.
+预期：FAIL，因为 `apps/agent-service/package.json`、`turbo.json` 不存在，root/desktop `dev` scripts 缺失，且 Python setup 当前位于 `pnpm test` 后。
 
-- [ ] **Step 3: Add the exact workspace bridge and Turbo task configuration**
+- [ ] **步骤 3：添加精确的 workspace 桥接与 Turbo 任务配置**
 
-Create `apps/agent-service/package.json`:
+创建 `apps/agent-service/package.json`：
 
 ```json
 {
@@ -339,7 +339,7 @@ Create `apps/agent-service/package.json`:
 }
 ```
 
-Create `apps/agent-service/turbo.json`:
+创建 `apps/agent-service/turbo.json`：
 
 ```json
 {
@@ -352,7 +352,7 @@ Create `apps/agent-service/turbo.json`:
 }
 ```
 
-Add this root task to `turbo.json` without changing existing task definitions:
+向 `turbo.json` 添加以下 root task，不修改既有 task definitions：
 
 ```json
 "dev": {
@@ -361,7 +361,7 @@ Add this root task to `turbo.json` without changing existing task definitions:
 }
 ```
 
-Add these root scripts before the existing gates:
+在 root scripts 的既有 gates 前添加：
 
 ```json
 "dev": "turbo run dev",
@@ -369,21 +369,21 @@ Add these root scripts before the existing gates:
 "dev:desktop": "turbo run dev --filter=@museworks/desktop"
 ```
 
-Change the root formatting glob from `apps/desktop/**/*.{json,ts,tsx,css,html}` to `apps/**/*.{json,ts,tsx,css,html}` so the new JSON manifests are covered.
+将 root formatting glob 从 `apps/desktop/**/*.{json,ts,tsx,css,html}` 改为 `apps/**/*.{json,ts,tsx,css,html}`，以覆盖新 JSON manifests。
 
-In `apps/desktop/package.json`, add:
+在 `apps/desktop/package.json` 中添加：
 
 ```json
 "dev": "node ../../node_modules/@electron-forge/cli/dist/electron-forge.js start"
 ```
 
-Retain `start` with the same value for compatibility. Do not change the hoisted root Forge CLI path or add Forge CLI to the desktop package.
+保留 `start` 的相同值以保持兼容。不得修改 hoisted root Forge CLI path，也不得将 Forge CLI 加入 desktop package。
 
-- [ ] **Step 4: Move Python setup ahead of Turbo gates in CI**
+- [ ] **步骤 4：在 CI 中将 Python setup 前移到 Turbo gates 前**
 
-In `.github/workflows/ci.yml`, move the existing `Set up Python`, `Set up uv`, and `Sync Python dependencies` steps to immediately after `Install Node dependencies`. Rename `Test Node workspaces` to `Test workspaces`. Delete only the standalone `Test agent service` step because `pnpm test` now reaches the agent workspace through Turbo.
+在 `.github/workflows/ci.yml` 中，将既有 `Set up Python`、`Set up uv`、`Sync Python dependencies` steps 移至 `Install Node dependencies` 后。将 `Test Node workspaces` 重命名为 `Test workspaces`。仅删除独立的 `Test agent service` step，因为 `pnpm test` 现在通过 Turbo 到达 agent workspace。
 
-The ordered middle of the workflow must be:
+workflow 中间部分必须是：
 
 ```yaml
 - name: Install Node dependencies
@@ -415,33 +415,33 @@ The ordered middle of the workflow must be:
   run: pnpm test
 ```
 
-Do not modify the workflow matrix, permissions, package, ASAR, or prohibition on release behavior.
+不得修改 workflow matrix、permissions、package、ASAR，或 release behavior 禁止规则。
 
-- [ ] **Step 5: Refresh the pnpm workspace lock and verify frozen installation**
+- [ ] **步骤 5：刷新 pnpm workspace lock 并验证 frozen installation**
 
-Run:
+运行：
 
 ```powershell
 pnpm install
 pnpm install --frozen-lockfile
 ```
 
-Expected: both PASS; `pnpm-lock.yaml` gains an `apps/agent-service` importer with no Node dependencies, and the exact pinned tool versions remain unchanged.
+预期：均 PASS；`pnpm-lock.yaml` 新增 `apps/agent-service` importer，且不新增 Node dependencies；精确锁定的工具版本保持不变。
 
-- [ ] **Step 6: Run orchestration tests and capture GREEN**
+- [ ] **步骤 6：运行编排测试并记录 GREEN**
 
-Run:
+运行：
 
 ```powershell
 node --test scripts/workspace-config.test.mjs scripts/ci-workflow.test.mjs
 pnpm turbo run dev --dry=json
 ```
 
-Expected: Node tests PASS. Dry-run JSON contains exactly `@museworks/agent-service#dev` and `@museworks/desktop#dev` for the unfiltered root command; both have `cache: false` and `persistent: true`. The agent task includes `MUSEWORKS_AGENT_PORT` in its environment declaration and the desktop task does not.
+预期：Node tests PASS。未过滤 root command 的 dry-run JSON 精确包含 `@museworks/agent-service#dev` 与 `@museworks/desktop#dev`；二者均为 `cache: false`、`persistent: true`。agent task 的 environment declaration 包含 `MUSEWORKS_AGENT_PORT`，desktop task 不包含。
 
-- [ ] **Step 7: Prove Turbo owns Python tests and checks**
+- [ ] **步骤 7：证明 Turbo 持有 Python tests 与 checks**
 
-Run:
+运行：
 
 ```powershell
 uv sync --project apps/agent-service --group test --locked
@@ -450,35 +450,35 @@ pnpm check
 git diff --check
 ```
 
-Expected: Turbo output includes `@museworks/agent-service#test`; `pnpm check` runs the agent test dependency and `@museworks/agent-service#check`; all Node, Vitest, pytest, boundary, skill, lock, and diff gates PASS.
+预期：Turbo output 包含 `@museworks/agent-service#test`；`pnpm check` 运行 agent test dependency 与 `@museworks/agent-service#check`；全部 Node、Vitest、pytest、boundary、skill、lock 与 diff gates PASS。
 
-- [ ] **Step 8: Commit the Turbo full-stack orchestration**
+- [ ] **步骤 8：提交 Turbo 全栈编排**
 
 ```powershell
 git add apps/agent-service/package.json apps/agent-service/turbo.json apps/desktop/package.json package.json turbo.json pnpm-lock.yaml scripts/workspace-config.test.mjs scripts/ci-workflow.test.mjs .github/workflows/ci.yml
 git commit -m "feat: orchestrate full-stack development"
 ```
 
-Request an independent review before Task 3. The reviewer must verify there is one process owner (Turbo), no `--parallel`, no Main changes, no duplicate standalone pytest workflow step, exact filter names, and an unchanged read-only native CI policy.
+进入任务 3 前请求独立审查。审查者必须验证只有一个进程所有者（Turbo）、没有 `--parallel`、没有 Main 变更、没有重复的独立 pytest workflow step、过滤名称精确，以及只读的原生 CI 策略未变。
 
 ---
 
-### Task 3: Document and prove the full-stack developer experience
+### 任务 3：记录并证明全栈开发体验
 
-**Files:**
+**文件：**
 
-- Modify: `README.md`
-- Modify: `docs/architecture/system-overview.md`
-- Modify: `docs/architecture/development-workflow.md`
+- 修改：`README.md`
+- 修改：`docs/architecture/system-overview.md`
+- 修改：`docs/architecture/development-workflow.md`
 
-**Interfaces:**
+**接口：**
 
-- Consumes: Task 2 root commands and the service address `http://127.0.0.1:8765`.
-- Produces: current-state documentation and runtime evidence for one-command full-stack startup, independent backend startup, GUI startup, health response, and clean shutdown.
+- 消费：任务 2 的 root commands 与服务地址 `http://127.0.0.1:8765`。
+- 产出：当前状态文档，以及一条命令全栈启动、独立后端启动、GUI 启动、health response 和 clean shutdown 的运行时证据。
 
-- [ ] **Step 1: Update current-state documentation without adding future claims**
+- [ ] **步骤 1：更新当前状态文档，不添加未来能力声明**
 
-Update `README.md` so the primary run section begins with:
+更新 `README.md`，让主要运行章节以以下内容开始：
 
 ```powershell
 # Electron + FastAPI
@@ -491,28 +491,28 @@ pnpm dev:agent
 pnpm dev:desktop
 ```
 
-The environment section must state that `uv --version` must resolve from PATH and report `uv 0.11.32` before any root command that reaches the Python workspace. Document `http://127.0.0.1:8765/v1/health`, `MUSEWORKS_AGENT_PORT`, and that Ctrl+C on the root command is the normal development shutdown. State explicitly that Turbo starts both tasks concurrently, Electron Main does not wait for or manage FastAPI, and packaged Python sidecar behavior is not implemented.
+环境部分必须说明：任何会进入 Python workspace 的 root command 前，`uv --version` 必须能从 PATH 解析并显示 `uv 0.11.32`。记录 `http://127.0.0.1:8765/v1/health`、`MUSEWORKS_AGENT_PORT`，并说明 Ctrl+C 是根命令正常的开发关闭方式。明确说明 Turbo 并发启动两个任务，Electron Main 不等待或管理 FastAPI，且 packaged Python sidecar 尚未实现。
 
-Update `docs/architecture/system-overview.md` with this current development topology:
+更新 `docs/architecture/system-overview.md`，加入当前开发拓扑：
 
 ```text
 pnpm dev → Turbo → Electron Forge/Vite
                  ↘ Uvicorn/FastAPI
 ```
 
-Keep the runtime architecture direction `Renderer → Preload → Electron Main → FastAPI` as a future connection path; do not claim the current Main calls health.
+保留 `Renderer → Preload → Electron Main → FastAPI` 作为未来连接方向；不得宣称当前 Main 调用了 health。
 
-Update `docs/architecture/development-workflow.md` to use root startup commands and explain that `pnpm test`/`pnpm check` now include Python through the workspace bridge. Retain direct uv commands as focused troubleshooting commands, not as a second required full-suite path.
+更新 `docs/architecture/development-workflow.md`，改用根启动命令，并说明 `pnpm test`/`pnpm check` 现在通过 workspace 桥接包含 Python。保留直接 uv 命令作为聚焦排障命令，而非第二套必需的完整测试路径。
 
-- [ ] **Step 2: Perform the backend-only runtime smoke**
+- [ ] **步骤 2：执行仅后端运行时 smoke**
 
-Start `pnpm dev:agent` in a background terminal from the worktree. Poll the observable endpoint rather than sleeping a fixed duration:
+从 worktree 的后台 terminal 启动 `pnpm dev:agent`。通过可观察端点轮询而非固定 sleep：
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8765/v1/health
 ```
 
-Expected JSON:
+预期 JSON：
 
 ```json
 {
@@ -522,23 +522,23 @@ Expected JSON:
 }
 ```
 
-Terminate the owning Turbo command, then verify no process that was started by this smoke remains listening on port 8765. Record the parent PID and its descendants before terminating so unrelated Node/Python processes are never targeted.
+终止拥有该进程的 Turbo command，然后验证本次 smoke 启动的任何进程均不再监听 8765 端口。终止前记录 parent PID 及其 descendants，确保不会误操作无关 Node/Python processes。
 
-- [ ] **Step 3: Perform the real full-stack GUI smoke**
+- [ ] **步骤 3：执行真实全栈 GUI smoke**
 
-Start `pnpm dev` from the worktree in a background terminal with captured stdout/stderr. Verify all of the following observable conditions:
+从 worktree 的后台 terminal 启动 `pnpm dev`，并捕获 stdout/stderr。验证下列全部可观察条件：
 
-1. Turbo reports both `@museworks/agent-service#dev` and `@museworks/desktop#dev`.
-2. `Invoke-RestMethod http://127.0.0.1:8765/v1/health` returns the strict health contract.
-3. A real Museworks Electron window appears and renders the existing app information without CSP, preload, or renderer errors.
-4. Closing the Electron window does not produce an unhandled process error.
-5. Terminating the root Turbo command removes only its recorded Electron, Uvicorn/Python, Forge/Vite, Node, and command-shell descendants; no recorded descendant remains.
+1. Turbo 报告 `@museworks/agent-service#dev` 与 `@museworks/desktop#dev`。
+2. `Invoke-RestMethod http://127.0.0.1:8765/v1/health` 返回严格 health contract。
+3. 真实 Museworks Electron window 出现，并渲染既有 app information，且没有 CSP、preload 或 renderer errors。
+4. 关闭 Electron window 不产生 unhandled process error。
+5. 终止 root Turbo command 后，只移除其记录的 Electron、Uvicorn/Python、Forge/Vite、Node 和 command-shell descendants，且没有任何记录的 descendant 残留。
 
-Use condition-based polling for the HTTP endpoint and window appearance. Do not treat a fixed sleep, an old screenshot, or a still-running orphan process as success.
+HTTP endpoint 和 window appearance 必须使用 condition-based polling。不得将固定 sleep、旧 screenshot 或仍在运行的 orphan process 视为成功。
 
-- [ ] **Step 4: Run the complete repository verification**
+- [ ] **步骤 4：运行完整仓库验证**
 
-Run fresh from the worktree:
+从 worktree 重新运行：
 
 ```powershell
 pnpm install --frozen-lockfile
@@ -559,35 +559,35 @@ uv lock --project apps/agent-service --check
 git diff --check
 ```
 
-Expected: every command exits 0; package/ASAR validation still succeeds on Windows x64. Do not claim macOS arm64 runtime success unless the native GitHub Actions job actually runs and passes.
+预期：每条命令均以 0 退出；package/ASAR validation 在 Windows x64 继续成功。除非原生 GitHub Actions job 实际运行并通过，否则不得声称 macOS arm64 runtime 成功。
 
-- [ ] **Step 5: Commit the developer workflow documentation**
+- [ ] **步骤 5：提交开发工作流文档**
 
 ```powershell
 git add README.md docs/architecture/system-overview.md docs/architecture/development-workflow.md
 git commit -m "docs: document full-stack development startup"
 ```
 
-- [ ] **Step 6: Obtain the final independent L2 review**
+- [ ] **步骤 6：获得最终独立 L2 审查**
 
-Invoke `requesting-code-review` over the complete range from the design-doc base through Task 3. Require findings to be classified by severity and verify:
+对设计文档基线到任务 3 的完整范围调用 `requesting-code-review`。要求 findings 按 severity 分类，并验证：
 
-- root and filtered commands work from the repository root;
-- Turbo is the sole development process owner;
-- Electron Main and Renderer behavior did not change;
-- Uvicorn is loopback-only and port validation is strict;
-- root Turbo tests genuinely execute pytest;
-- CI setup order supports the workspace bridge without publishing or secrets;
-- shutdown evidence proves no task-owned process remains;
-- docs distinguish development startup from the unimplemented packaged sidecar.
+- root 与 filtered commands 能从仓库根目录工作；
+- Turbo 是唯一开发进程所有者；
+- Electron Main 和 Renderer behavior 未变；
+- Uvicorn 只监听 loopback，port validation 严格；
+- root Turbo tests 确实执行 pytest；
+- CI 设置顺序支持 workspace 桥接，且没有发布或密钥；
+- shutdown evidence 证明没有 task-owned process 残留；
+- 文档区分开发启动与未实现的打包 sidecar。
 
-If review finds a defect, return to the task that owns it, add or strengthen a RED test, implement the minimum fix, rerun that task's GREEN and the final suite, then commit the remediation with a focused message. Do not close the work while any Critical or Important finding remains.
+若 review 发现 defect，返回拥有该问题的任务，添加或强化 RED test，实施最小修复，重跑该任务的 GREEN 与完整最终套件，再用聚焦 message 提交 remediation。在任何 Critical 或 Important finding 未解决前，不得关闭工作。
 
-## Final Handoff Checklist
+## 最终交付检查清单
 
-- [ ] `git status --short --branch` shows no uncommitted implementation changes.
-- [ ] The implementation report lists the three focused commits and any review remediation commit.
-- [ ] RED and GREEN evidence is recorded for Python CLI and workspace/CI orchestration.
-- [ ] Full-stack runtime evidence includes current PIDs, strict health JSON, a real current Electron window, and clean descendant termination.
-- [ ] Verification results distinguish Windows x64 local evidence from unexecuted macOS arm64 CI.
-- [ ] No claim is made that Electron Main manages FastAPI or that packaged applications include Python.
+- [ ] `git status --short --branch` 没有未提交的实现变更。
+- [ ] implementation report 列出三个聚焦 commits 与任何 review remediation commit。
+- [ ] Python CLI 与 workspace/CI orchestration 都已记录 RED 和 GREEN 证据。
+- [ ] 全栈运行时证据包含 current PIDs、严格 health JSON、真实当前 Electron window 与干净的 descendant termination。
+- [ ] 验证结果区分 Windows x64 local evidence 与尚未执行的 macOS arm64 CI。
+- [ ] 不得声称 Electron Main 管理 FastAPI，也不得声称 packaged applications 包含 Python。
