@@ -1,4 +1,5 @@
-import { access, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -6,7 +7,10 @@ const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = resolve(scriptDirectory, '..');
 const manifestPath = resolve(repositoryRoot, '.agents', 'skills-manifest.yaml');
 const allowedStatuses = new Set(['enabled', 'quarantined', 'rejected']);
-const projectSkills = ['museworks-best-practices-router', 'museworks-electron-best-practices'];
+export const projectSkills = [
+  'museworks-best-practices-router',
+  'museworks-electron-best-practices',
+];
 
 export async function loadSkillsManifest(path = manifestPath) {
   return JSON.parse(await readFile(path, 'utf8'));
@@ -86,18 +90,16 @@ export function validateSkillsManifest(manifest) {
   return errors;
 }
 
-async function validateProjectSkillFiles() {
+export function validateProjectSkillFiles(readProjectFile) {
   const errors = [];
   for (const name of projectSkills) {
-    const directory = resolve(repositoryRoot, '.agents', 'skills', name);
     for (const relative of ['SKILL.md', join('agents', 'openai.yaml')]) {
-      try {
-        await access(resolve(directory, relative));
-      } catch {
+      const path = join('.agents', 'skills', name, relative);
+      if (readProjectFile(path) === undefined) {
         errors.push(`${name}: missing ${relative}`);
       }
     }
-    const skillText = await readFile(resolve(directory, 'SKILL.md'), 'utf8').catch(() => '');
+    const skillText = readProjectFile(join('.agents', 'skills', name, 'SKILL.md')) ?? '';
     const normalizedSkillText = skillText.replace(/\r\n/g, '\n');
     if (!normalizedSkillText.startsWith(`---\nname: ${name}\n`)) {
       errors.push(`${name}: SKILL.md frontmatter name must match its directory`);
@@ -106,9 +108,19 @@ async function validateProjectSkillFiles() {
   return errors;
 }
 
+function validateProjectSkillFilesOnDisk() {
+  return validateProjectSkillFiles((relativePath) => {
+    try {
+      return readFileSync(resolve(repositoryRoot, relativePath), 'utf8');
+    } catch {
+      return undefined;
+    }
+  });
+}
+
 async function main() {
   const manifest = await loadSkillsManifest();
-  const errors = [...validateSkillsManifest(manifest), ...(await validateProjectSkillFiles())];
+  const errors = [...validateSkillsManifest(manifest), ...validateProjectSkillFilesOnDisk()];
   if (errors.length > 0) {
     for (const error of errors) {
       process.stderr.write(`- ${error}\n`);

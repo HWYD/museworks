@@ -43,6 +43,22 @@ uv run --project apps/agent-service --group test --locked pytest apps/agent-serv
 uv lock --project apps/agent-service --check
 ```
 
+## 提交前校验
+
+仅当开发者或 Agent 已获得用户对当前改动的明确提交授权时，才会由 Husky 运行本地 hook。`pre-commit` 先用 lint-staged 修复并重新暂存已暂存的 JS/TS、JSON、YAML、Markdown、CSS 和 HTML 文件，再执行仅读取 Git index 的 `pnpm verify:commit`；后者检查空白错误、Renderer 边界和项目 Skill 治理。`commit-msg` 使用 Conventional Commit 校验提交消息。
+
+可在获得提交授权后手动运行：
+
+```powershell
+# 校验已暂存内容后进入中文交互式提交向导；未暂存的改动不会被包含
+pnpm commit
+
+# 只运行 index 校验
+pnpm verify:commit
+```
+
+`pnpm commit` 在没有已暂存文件时会提示先执行 `git add <文件>`；通过 index 校验后以方向键和 Enter 打开中文提交向导，不再打开 Vim。scope 可跳过，向导提供通用建议并允许输入小写 kebab-case 的自定义范围；emoji 只显示在向导中，最终消息保持 Conventional Commit 格式。hook 不授予暂存、提交、推送、合并或创建 Pull Request 的权限。`--no-verify` 只会绕过本地 hook，不能绕过 CI，除非已明确说明必要原因不得使用。完整的 `pnpm check`、Python 测试、原生平台 package 与 ASAR 校验仍由 CI 执行，不放入每次提交的快速 hook。
+
 Electron Forge + Vite 是唯一桌面构建路径，不添加 Webpack 源码、配置或直接依赖。当前 package 不包含或启动 Python 服务；packaged Python sidecar 尚未实现。Windows x64 的 GUI/package 已本地验证；macOS arm64 必须以 GitHub Actions 的原生 job 成功为准，目前未验证。
 
 ## Skill 路由

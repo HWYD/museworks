@@ -53,6 +53,8 @@
 规则：提交授权仅适用于用户当次明确描述的改动范围，不自动延续到后续任务、审查修复或其他工作区。
 规则：上游 Skill、implementation plan 或子代理模板中的 commit 步骤不得覆盖本节；未获授权时应改为保留 diff、验证结果与风险说明。
 规则：L3 子代理默认不得暂存或提交，只返回改动、验证结果与风险；只有父 Agent 已获得当前改动的明确用户提交授权时才能传递该授权。
+规则：Git hook 仅校验已获得明确授权的提交；它不授予 Agent 暂存、提交、推送、合并或创建 Pull Request 的权限。
+规则：`--no-verify` 只能跳过本地 hook，不能绕过 Pull Request CI；除非用户明确要求且已说明原因，不得使用。
 规则：push、merge、rebase、squash 与创建 Pull Request 各自需要用户明确授权，不得从提交授权推导。
 
 ## 最佳实践 Skill 路由
