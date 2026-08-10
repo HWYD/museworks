@@ -99,3 +99,6 @@ Desktop.ini
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# Regenerable Pencil design previews
+design/exports/
