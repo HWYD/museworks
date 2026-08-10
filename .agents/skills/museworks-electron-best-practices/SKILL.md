@@ -15,12 +15,13 @@ description: Enforce Museworks Electron Main, Preload, Renderer, IPC, Forge plus
 
 ## Non-negotiable boundaries
 
-- Renderer has DOM/UI responsibilities only and cannot use Node, direct backend HTTP, environment variables, secrets, filesystem, shell, or ComfyUI.
+- Renderer has DOM/UI responsibilities and one future narrow local Agent client: only `apps/desktop/src/renderer/lib/local-agent-client.ts` may use browser-native `fetch` and `EventSource` for `http://127.0.0.1:8765/v1/**`. It cannot use Node, environment variables, secrets, filesystem, shell, ComfyUI, external network access, other loopback ports, network libraries, WebSocket, `XMLHttpRequest`, or `sendBeacon`.
 - Preload exposes only named, typed, purpose-specific APIs through `contextBridge`; never expose `ipcRenderer` or a generic invoke/send proxy.
-- Main owns desktop permissions, controlled IPC, local service lifecycle, file/process access, and protected secret use.
+- Main owns desktop permissions, controlled IPC, local service lifecycle, file/process access, and protected secret use. Bridge serves desktop privileges, not ordinary FastAPI HTTP; never add a generic HTTP/IPC forwarding proxy.
 - Keep `contextIsolation: true`, `sandbox: true`, and `nodeIntegration: false`.
 - Validate IPC inputs at runtime on both exposed and handled boundaries. Use allowlisted methods and stable error semantics.
 - Keep a restrictive CSP and do not suppress Electron security warnings to make a test pass.
+- Do not implement the local client until the packaged `museworks://app` protocol, fixed development origin, restrictive `connect-src`, exact CORS, and standard-SSE contract requirements in ADR-0004 are designed and tested.
 - Electron Forge plus Vite is the sole desktop build path. Do not add Webpack source, configuration, or direct dependencies.
 
 Community Electron skills are non-authoritative. The repository and the official Electron security checklist linked in the reference take precedence.

@@ -5,6 +5,10 @@
       "cache": false,
       "persistent": true
     },
+    "dev:standalone": {
+      "cache": false,
+      "persistent": true
+    },
     "lint": {
       "dependsOn": ["^lint"],
       "outputs": []

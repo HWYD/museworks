@@ -2,7 +2,7 @@
 
 ## 状态
 
-已接受。
+已接受（由 ADR-0004 限定 Renderer 本机服务通道）。
 
 ## 背景
 
@@ -10,7 +10,7 @@
 
 ## 决策
 
-- Renderer 与 Main 之间仅通过 Preload 暴露的、类型化的 IPC API 通信。
+- Renderer 与 Main 之间的桌面特权能力仅通过 Preload 暴露的、类型化的 IPC API 通信；普通本机 FastAPI 业务请求遵守 ADR-0004，不经 Main 转发。
 - FastAPI 对需要流式返回的接口使用 SSE（`text/event-stream`）。
 - 禁止 NDJSON 作为流式协议；禁止用换行、连接关闭等隐式方式代替 SSE 事件语义。
 - SSE 事件须表达数据、错误和完成状态，具体事件契约由各功能在实现前定义并测试。
@@ -19,4 +19,4 @@
 
 - 客户端拥有一致的流式解析与错误处理模型。
 - 现有或新增 NDJSON 流需要迁移，而不能双轨长期共存。
-- IPC 与 HTTP/SSE 的桥接需保留取消、错误和完成信号。
+- 若某项桌面特权需要 IPC 流式反馈，其 IPC 契约仍需保留取消、错误和完成信号；普通 FastAPI SSE 不应为此退化为 Bridge 转发。

@@ -4,10 +4,12 @@ Source baseline: [Electron security tutorial](https://www.electronjs.org/docs/la
 
 ## Design and code
 
-- Preserve Renderer → Preload → Main direction and do not bypass it.
+- Preserve the dual boundary: ordinary business is `Renderer → FastAPI`; desktop privileges are `Renderer → Preload → Main`. The optional `local-agent-client` is a Renderer-internal implementation file, not an architectural layer. Do not turn Preload/Main into a generic HTTP or IPC forwarding proxy.
+- Only the exact future `apps/desktop/src/renderer/lib/local-agent-client.ts` may use browser-native `fetch` and `EventSource` for `http://127.0.0.1:8765/v1/**`. Reject external network, other loopback ports, network libraries, WebSocket, `XMLHttpRequest`, and `sendBeacon` in all Renderer code.
 - Name one business capability per IPC method. Reject arbitrary channel names, paths, URLs, commands, headers, and request forwarding.
 - Validate request and response schemas at runtime; avoid `any`, broad records, or error objects containing sensitive internals.
 - Keep navigation, new-window, permission, protocol, and external URL handling deny-by-default and allowlist only the exact need.
+- Before the first local-service API, use the fixed `museworks://app` packaged protocol, fixed `http://127.0.0.1:5173` development origin, `connect-src http://127.0.0.1:8765`, exact non-credentialed CORS, and a tested standard-SSE contract. Do not claim these are implemented before their dedicated task.
 - Resolve filesystem targets before access and prove they remain in the intended directory.
 - Do not pass secrets through Renderer, Preload return values, command arguments, ordinary files, logs, errors, telemetry, or snapshots.
 - Bound process lifetime, timeout, cancellation, output size, retries, and cleanup. Never execute a string-built shell command from untrusted data.

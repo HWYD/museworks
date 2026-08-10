@@ -47,7 +47,7 @@ Read [conflict-policy.md](references/conflict-policy.md) before applying upstrea
 
 - Never load every skill by default.
 - Never upgrade a dependency or enable a future/experimental flag merely to satisfy a skill.
-- Renderer guidance cannot authorize direct HTTP, Node, environment, filesystem, or secret access.
+- Renderer guidance cannot authorize Node、环境、文件、密钥、外部网络或任意其他 loopback 网络访问。唯一未来例外是 `apps/desktop/src/renderer/lib/local-agent-client.ts` 使用浏览器原生 `fetch` 与 `EventSource` 访问 `http://127.0.0.1:8765/v1/**`；将该精确路径按 Electron 边界路由，要求 `museworks-electron-best-practices`，但不加载 FastAPI。它不授权网络库、WebSocket、XMLHttpRequest、sendBeacon、ComfyUI 或通用 HTTP/IPC 转发。
 - FastAPI guidance cannot authorize JSON Lines or NDJSON; Museworks streaming is standard SSE only.
 - The external Web Design, pnpm, and OpenAI security candidates are not enabled. Their manifest status and audit reason are authoritative.
 - Vitest remains governed by Superpowers TDD and repository tests; no third-party Vitest workflow is loaded.

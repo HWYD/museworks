@@ -50,6 +50,54 @@ test('Renderer routes reject direct privileged capabilities', () => {
   assert.ok(!route.required.includes('fastapi'));
 });
 
+test('only the exact local Agent client receives the narrow local HTTP exception', () => {
+  const route = routeSkills({
+    paths: ['apps\\desktop\\src\\renderer\\lib\\local-agent-client.ts'],
+    intent: 'call the local Agent API with native fetch and EventSource',
+    level: 'L3',
+  });
+
+  expectIncludes(route.required, ['museworks-electron-best-practices']);
+  assert.ok(!route.required.includes('fastapi'));
+  assert.ok(!route.forbidden.includes('renderer-direct-http'));
+  expectIncludes(route.forbidden, [
+    'renderer-node-access',
+    'renderer-filesystem-access',
+    'renderer-environment-access',
+    'renderer-secret-access',
+    'renderer-external-network',
+    'renderer-other-loopback',
+    'renderer-network-library',
+    'renderer-websocket',
+    'renderer-xmlhttprequest',
+    'renderer-send-beacon',
+  ]);
+});
+
+test('ordinary Renderer code remains forbidden from direct HTTP', () => {
+  const route = routeSkills({
+    paths: ['apps/desktop/src/renderer/App.tsx'],
+    intent: 'call the local Agent API with native fetch',
+    level: 'L2',
+  });
+
+  expectIncludes(route.forbidden, ['renderer-direct-http']);
+});
+
+test('mixed Renderer tasks retain the direct HTTP restriction', () => {
+  const route = routeSkills({
+    paths: [
+      'apps/desktop/src/renderer/lib/local-agent-client.ts',
+      'apps/desktop/src/renderer/App.tsx',
+    ],
+    intent: 'call the local Agent API with native fetch',
+    level: 'L2',
+  });
+
+  expectIncludes(route.required, ['museworks-electron-best-practices']);
+  expectIncludes(route.forbidden, ['renderer-direct-http']);
+});
+
 test('public React component API changes add composition guidance', () => {
   const route = routeSkills({
     paths: ['apps/desktop/src/renderer/components/Composer.tsx'],
