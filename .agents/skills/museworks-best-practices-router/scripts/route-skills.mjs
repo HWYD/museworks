@@ -11,7 +11,7 @@ function unique(values) {
 }
 
 function normalizedPaths(paths) {
-  return paths.map((path) => path.replaceAll('\\', '/').toLowerCase());
+  return paths.map((path) => path.replaceAll('\\', '/').replace(/^\.\//, '').toLowerCase());
 }
 
 function addEnabled(required, forbidden, name) {
@@ -75,14 +75,22 @@ export function routeSkills({ paths = [], intent = '', level = 'L1' } = {}) {
   const forbidden = [];
   const notes = [];
 
-  const renderer = normalized.some((path) => path.includes('/src/renderer/'));
-  const electron = normalized.some(
-    (path) =>
-      path.includes('/src/main/') ||
-      path.includes('/src/preload/') ||
-      path.endsWith('/forge.config.ts') ||
-      /vite\.(main|preload|renderer)\.config\.[cm]?[jt]s$/.test(path),
+  const rendererPaths = normalized.filter((path) => path.includes('/src/renderer/'));
+  const renderer = rendererPaths.length > 0;
+  const containsLocalAgentClient = rendererPaths.some(
+    (path) => path === 'apps/desktop/src/renderer/lib/local-agent-client.ts',
   );
+  const localAgentClient =
+    renderer &&
+    rendererPaths.every((path) => path === 'apps/desktop/src/renderer/lib/local-agent-client.ts');
+  const electron =
+    normalized.some(
+      (path) =>
+        path.includes('/src/main/') ||
+        path.includes('/src/preload/') ||
+        path.endsWith('/forge.config.ts') ||
+        /vite\.(main|preload|renderer)\.config\.[cm]?[jt]s$/.test(path),
+    ) || containsLocalAgentClient;
   const python = normalized.some(
     (path) => path.startsWith('apps/agent-service/') || path.includes('/agent-service/'),
   );
@@ -106,12 +114,20 @@ export function routeSkills({ paths = [], intent = '', level = 'L1' } = {}) {
 
   if (renderer) {
     addEnabled(required, forbidden, 'vercel-react-best-practices');
+    if (!localAgentClient) {
+      forbidden.push('renderer-direct-http');
+    }
     forbidden.push(
-      'renderer-direct-http',
       'renderer-node-access',
       'renderer-filesystem-access',
       'renderer-environment-access',
       'renderer-secret-access',
+      'renderer-external-network',
+      'renderer-other-loopback',
+      'renderer-network-library',
+      'renderer-websocket',
+      'renderer-xmlhttprequest',
+      'renderer-send-beacon',
     );
     if (componentApi) {
       addEnabled(required, forbidden, 'vercel-composition-patterns');

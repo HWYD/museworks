@@ -14,7 +14,7 @@
   },
   "scripts": {
     "dev": "turbo run dev",
-    "dev:server": "turbo run dev --filter=@museworks/agent-service",
+    "dev:server": "turbo run dev:standalone --filter=@museworks/agent-service",
     "dev:desktop": "turbo run dev --filter=@museworks/desktop",
     "lint": "turbo run lint",
     "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json AGENTS.md \".agents/**/*.{md,yaml,yml}\" \"apps/**/*.{json,ts,tsx,css,html}\" \"packages/**/*.{json,ts,tsx}\" \"scripts/**/*.{js,mjs,ts}\" \".github/workflows/**/*.{yml,yaml}\" README.md docs/architecture/development-workflow.md docs/architecture/skill-governance.md",
@@ -23,13 +23,36 @@
     "build": "turbo run build",
     "check": "turbo run check && pnpm verify:boundaries && pnpm verify:skills",
     "verify:boundaries": "node scripts/verify-boundaries.mjs",
-    "verify:skills": "node scripts/verify-skill-governance.mjs"
+    "verify:skills": "node scripts/verify-skill-governance.mjs",
+    "verify:commit": "node scripts/verify-staged-changes.mjs",
+    "commit": "node scripts/prepare-commit.mjs && git-cz",
+    "lint-staged": "lint-staged",
+    "commitlint": "commitlint",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "{apps,packages,scripts}/**/*.{js,mjs,ts,tsx}": [
+      "eslint --max-warnings=0 --fix",
+      "prettier --write"
+    ],
+    "*.{json,yaml,yml,md,css,html}": "prettier --write"
+  },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-git"
+    }
   },
   "devDependencies": {
+    "@commitlint/cli": "20.1.0",
+    "@commitlint/config-conventional": "20.0.0",
     "@electron-forge/cli": "7.11.2",
+    "commitizen": "4.3.1",
+    "cz-git": "1.10.1",
     "@eslint/js": "9.39.1",
     "eslint": "9.39.1",
     "globals": "16.5.0",
+    "husky": "9.1.7",
+    "lint-staged": "16.2.7",
     "prettier": "3.7.3",
     "turbo": "2.2.3",
     "typescript": "5.9.3",

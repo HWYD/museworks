@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node ../../scripts/run-uv.mjs run --locked museworks-agent --reload",
+    "dev:standalone": "node ../../scripts/run-uv.mjs run --locked museworks-agent --reload",
     "start": "node ../../scripts/run-uv.mjs run --locked museworks-agent",
     "test": "node ../../scripts/run-uv.mjs run --group test --locked pytest tests -q",
     "check": "node ../../scripts/run-uv.mjs lock --check"

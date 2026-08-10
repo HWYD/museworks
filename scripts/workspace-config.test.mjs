@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import test from 'node:test';
 
 const readText = (path) => readFileSync(path, 'utf8');
@@ -62,14 +63,16 @@ test('defines Turbo-owned full-stack development entrypoints', () => {
   assert.equal(rootManifest.scripts.dev, 'turbo run dev');
   assert.equal(
     rootManifest.scripts['dev:server'],
-    'turbo run dev --filter=@museworks/agent-service',
+    'turbo run dev:standalone --filter=@museworks/agent-service',
   );
   assert.equal(rootManifest.scripts['dev:agent'], undefined);
   assert.equal(rootManifest.scripts['dev:desktop'], 'turbo run dev --filter=@museworks/desktop');
   assert.deepEqual(rootTurbo.tasks.dev, { cache: false, persistent: true });
+  assert.deepEqual(rootTurbo.tasks['dev:standalone'], { cache: false, persistent: true });
   assert.equal(desktopManifest.scripts.dev, desktopManifest.scripts.start);
   assert.deepEqual(agentManifest.scripts, {
     dev: 'node ../../scripts/run-uv.mjs run --locked museworks-agent --reload',
+    'dev:standalone': 'node ../../scripts/run-uv.mjs run --locked museworks-agent --reload',
     start: 'node ../../scripts/run-uv.mjs run --locked museworks-agent',
     test: 'node ../../scripts/run-uv.mjs run --group test --locked pytest tests -q',
     check: 'node ../../scripts/run-uv.mjs lock --check',
@@ -77,7 +80,7 @@ test('defines Turbo-owned full-stack development entrypoints', () => {
   assert.equal(agentManifest.private, true);
   assert.deepEqual(agentTurbo, {
     extends: ['//'],
-    tasks: { dev: { env: ['MUSEWORKS_AGENT_PORT'] } },
+    tasks: { 'dev:standalone': { env: ['MUSEWORKS_AGENT_PORT'] } },
   });
   for (const forbidden of ['lint', 'typecheck', 'build']) {
     assert.equal(agentManifest.scripts[forbidden], undefined);
@@ -115,6 +118,9 @@ test('pins the Forge Vite runtime to the approved desktop version', () => {
   const rootManifest = JSON.parse(readText('package.json'));
   const desktopManifest = JSON.parse(readText('apps/desktop/package.json'));
   const pluginViteManifestPath = require.resolve('@electron-forge/plugin-vite/package.json');
+  const desktopViteRuntimePath = require.resolve('vite/package.json', {
+    paths: [resolve('apps/desktop')],
+  });
   const pluginViteRuntimePath = require.resolve('vite/package.json', {
     paths: [pluginViteManifestPath],
   });
@@ -122,6 +128,6 @@ test('pins the Forge Vite runtime to the approved desktop version', () => {
   assert.equal(rootManifest.devDependencies.vite, '7.3.6');
   assert.equal(desktopManifest.devDependencies.vite, '7.3.6');
   assert.equal(require('vite/package.json').version, '7.3.6');
-  assert.equal(require('../apps/desktop/node_modules/vite/package.json').version, '7.3.6');
+  assert.equal(require(desktopViteRuntimePath).version, '7.3.6');
   assert.equal(require(pluginViteRuntimePath).version, '7.3.6');
 });

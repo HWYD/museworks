@@ -35,6 +35,8 @@ implementation plan 的 `Task N` 是正式任务清单。`task-N-brief.md`、`ta
 
 Git 提交权限独立于 workflow profile。L0 至 L3 都只在用户直接明确要求提交当前改动时允许暂存和提交；执行任务、完成任务或批准计划不构成授权。上游 frequent-commit 建议和子代理模板由项目规则覆盖，未获授权的实施结果以未暂存 diff、验证结果和风险说明交付。push、merge、rebase、squash 与创建 Pull Request 仍分别需要明确授权。
 
+已获授权的提交使用 Husky 的快速本地保护：lint-staged 只格式化并重新暂存已暂存的可修复文本文件，随后 `pnpm verify:commit` 从 Git index 检查空白错误、Renderer 边界和项目 Skill 治理；`commit-msg` 强制 Conventional Commit。hook 本身不构成 Git 写入授权，`--no-verify` 也不能绕过 PR CI。
+
 ## 上游审核结果
 
 所有候选在临时隔离目录中以固定 commit 获取，完整阅读 `SKILL.md`；启用候选还阅读了其直接引用材料。skills.sh 的公开扫描只作为线索，人工源码审核才决定状态。

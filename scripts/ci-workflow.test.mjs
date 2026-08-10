@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const readWorkflow = () => readFileSync('.github/workflows/ci.yml', 'utf8');
+const readWorkflow = () => readFileSync('.github/workflows/ci.yml', 'utf8').replace(/\r\n/g, '\n');
 
 test('runs the bootstrap gates on the approved native CI matrix', () => {
   const workflow = readWorkflow();
@@ -24,7 +24,7 @@ test('runs the bootstrap gates on the approved native CI matrix', () => {
     ['x64', 'arm64'],
   );
   assert.deepEqual(
-    [...workflow.slice(workflow.indexOf('jobs:\n')).matchAll(/^  ([a-z0-9_-]+):\s*$/gm)].map(
+    [...workflow.slice(workflow.indexOf('jobs:\n')).matchAll(/^ {2}([a-z0-9_-]+):\s*$/gm)].map(
       (match) => match[1],
     ),
     ['bootstrap'],

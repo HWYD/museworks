@@ -1,7 +1,7 @@
 {
   "extends": ["//"],
   "tasks": {
-    "dev": {
+    "dev:standalone": {
       "env": ["MUSEWORKS_AGENT_PORT"]
     }
   }
