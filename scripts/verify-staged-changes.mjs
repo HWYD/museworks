@@ -3,7 +3,6 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { validateSource } from './verify-boundaries.mjs';
-import { validateProjectSkillFiles, validateSkillsManifest } from './verify-skill-governance.mjs';
 
 function runGit(cwd, args, allowFailure = false) {
   const result = spawnSync('git', args, { cwd, encoding: 'utf8' });
@@ -24,7 +23,7 @@ function listStagedPaths(cwd) {
 }
 
 function readIndexFile(cwd, path) {
-  const result = runGit(cwd, ['show', `:${path}`], true);
+  const result = runGit(cwd, ['show', `:${path.replace(/\\/g, '/')}`], true);
   return result.status === 0 ? result.stdout : undefined;
 }
 
@@ -41,39 +40,10 @@ function verifyStagedRendererBoundaries(cwd, stagedPaths) {
   }
 }
 
-function verifyStagedSkillGovernance(cwd, stagedPaths) {
-  if (!stagedPaths.some((path) => path.startsWith('.agents/'))) {
-    return;
-  }
-
-  const manifestText = readIndexFile(cwd, '.agents/skills-manifest.yaml');
-  if (manifestText === undefined) {
-    throw new Error('Skill governance violations:\n- skills manifest missing from staged index');
-  }
-
-  let manifest;
-  try {
-    manifest = JSON.parse(manifestText);
-  } catch {
-    throw new Error('Skill governance violations:\n- skills manifest must contain valid JSON');
-  }
-
-  const errors = [
-    ...validateSkillsManifest(manifest),
-    ...validateProjectSkillFiles((path) => readIndexFile(cwd, path)),
-  ];
-  if (errors.length > 0) {
-    throw new Error(
-      `Skill governance violations:\n${errors.map((error) => `- ${error}`).join('\n')}`,
-    );
-  }
-}
-
 export function verifyStagedChanges({ cwd = process.cwd() } = {}) {
   runGit(cwd, ['diff', '--cached', '--check']);
   const stagedPaths = listStagedPaths(cwd);
   verifyStagedRendererBoundaries(cwd, stagedPaths);
-  verifyStagedSkillGovernance(cwd, stagedPaths);
 }
 
 const invokedUrl = process.argv[1] ? pathToFileURL(resolve(process.argv[1])).href : '';

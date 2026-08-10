@@ -16,23 +16,26 @@ pnpm dev → Turbo → Electron Forge/Vite
                  ↘ Uvicorn/FastAPI
 ```
 
-Turbo 并发持有这两个源码开发进程，不设置启动顺序或 health 等待。Electron Main 不启动、停止、探测或管理 FastAPI，也没有调用当前 health 端点。独立入口是 `pnpm dev:desktop` 与 `pnpm dev:server`。
+Turbo 并发持有这两个源码开发进程，不设置启动顺序或 health 等待。Electron Main 不启动、停止、探测或管理 FastAPI，也没有调用当前 health 端点。全栈 `pnpm dev` 固定让服务监听 `127.0.0.1:8765`，且不向该任务传递 `MUSEWORKS_AGENT_PORT`；独立入口是 `pnpm dev:desktop` 与 `pnpm dev:server`，只有后者允许用该变量覆盖端口，覆盖端口不承诺可被 Renderer 使用。
 
 该拓扑不代表打包集成：packaged Python sidecar 尚未实现，当前 Electron package 不包含 Python 服务。
 
 ## 批准的未来拓扑
 
-后续能力必须沿单向受控边界扩展：
+后续能力采用双通道受控边界：
 
 ```text
-Renderer → Preload → Electron Main → FastAPI → Agent Runtime → Tool → ComfyUI Adapter
+普通业务：Renderer → FastAPI → Agent Runtime → Tool → ComfyUI Adapter
+桌面特权：Renderer → Preload → Electron Main → OS / safeStorage / Sidecar
 ```
 
-- Renderer 仅负责界面状态和用户交互，不直接访问 Node、文件、环境变量、密钥、ComfyUI 或后端 HTTP。
-- Preload 只暴露最小、具名、类型化的 IPC API。
-- Electron Main 管理桌面权限、IPC 和受控网络边界；未来打包 sidecar 的本地服务生命周期仍需单独实现。
-- FastAPI 是未来本地 HTTP 契约边界；Agent Runtime 负责 Deep Agents 编排。
+- Renderer 仅负责界面状态和用户交互，不直接访问 Node、文件、环境变量、密钥、ComfyUI、外部网络或任意 loopback 端口。首个普通 API 实现时，唯一的 `local-agent-client` 可访问固定的 `http://127.0.0.1:8765/v1/**`。
+- Preload 只暴露最小、具名、类型化的桌面权限 IPC API，不能成为通用 HTTP 转发器。
+- Electron Main 管理桌面权限、IPC、安全存储和未来 Sidecar 生命周期；未来打包 sidecar 的本地服务生命周期仍需单独实现。
+- FastAPI 是未来本地 HTTP 契约边界；普通 Agent、Run、Artifact 与标准 SSE 业务数据由 Renderer 直连，未来可由 Renderer 内部的 `local-agent-client` 集中封装请求，Agent Runtime 负责 Deep Agents 编排。
 - Ark 是 Agent Runtime 调用的模型 Provider Adapter；Tool 通过 ComfyUI Adapter 调用托管或外部 ComfyUI。
+
+当前尚未创建 `local-agent-client`，也没有普通业务 API、Artifact、SSE、CORS、CSP `connect-src` 或 `museworks://app` 自定义协议实现。首次 API 功能必须先收紧实现：开发态仅允许固定 Vite origin，打包态使用 `museworks://app`；FastAPI CORS 只允许这两个固定 origin，不使用 `*` 或凭据；CSP 只增加 `connect-src http://127.0.0.1:8765`；SSE 保持 `text/event-stream`，并显式定义增量、完成、错误与取消事件。
 
 未来 Ark 接入计划使用模型 `Doubao-Seed-2.1-turbo` 和基础地址 `https://ark.cn-beijing.volces.com/api/plan/v3`。仓库未提交 API Key；后续凭据只可由 Electron Main 在安全边界内管理，不得进入 Renderer、Preload、日志或测试夹具。
 

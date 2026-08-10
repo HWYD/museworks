@@ -17,7 +17,7 @@ pnpm dev:server
 pnpm dev:desktop
 ```
 
-`pnpm dev` 通过 Turbo 并发持有 Electron Forge/Vite 与 Uvicorn/FastAPI 两个长运行任务，不设置启动顺序或就绪等待。Electron Main 不等待、探测或管理 FastAPI。默认 health 地址是 `http://127.0.0.1:8765/v1/health`；`MUSEWORKS_AGENT_PORT` 可将端口覆盖为 `1..65535` 的 ASCII 十进制值。按 Ctrl+C 是这些根开发命令的正常关闭方式。
+`pnpm dev` 通过 Turbo 并发持有 Electron Forge/Vite 与 Uvicorn/FastAPI 两个长运行任务，不设置启动顺序或就绪等待。Electron Main 不等待、探测或管理 FastAPI。全栈联调的 health 地址固定为 `http://127.0.0.1:8765/v1/health`，Turbo 不会向该任务传递 `MUSEWORKS_AGENT_PORT`。只有独立服务 `pnpm dev:server` 支持用该变量覆盖端口为 `1..65535` 的 ASCII 十进制值，且该覆盖端口不承诺可被 Renderer 使用。按 Ctrl+C 是这些根开发命令的正常关闭方式。
 
 安装、检查和打包使用：
 
@@ -75,20 +75,21 @@ node .agents/skills/museworks-best-practices-router/scripts/route-skills.mjs --l
 
 每项功能先确定其所属边界，再实施最小改动：UI 属于 Renderer，受控桌面能力属于 Preload/Electron Main，服务与编排属于 FastAPI/Agent Runtime，Ark 模型差异属于 Provider Adapter，ComfyUI 差异属于 Tool 后的 ComfyUI Adapter。
 
-当前 Renderer 不直接访问 FastAPI；FastAPI 也只有 `/v1/health`。`/v1/run`、生成、Ark、Deep Agents、ComfyUI、本地模型和流式链路都属于后续工作。
+当前 Renderer 尚未访问 FastAPI；FastAPI 也只有 `/v1/health`。首个普通业务 API 实现时，Renderer 只能通过唯一的 `local-agent-client` 直连固定本地 `http://127.0.0.1:8765/v1/**`；不能连接外部网络、ComfyUI 或任意 loopback 端口。`/v1/run`、生成、Ark、Deep Agents、ComfyUI、本地模型和流式链路都属于后续工作。
 
 ## 后续功能流程
 
 1. 明确用户场景、输入输出和资源约束。
 2. 定义跨边界契约：IPC 方法、HTTP 请求、SSE 事件或工具参数。
-3. 自内向外实现 Ark Provider Adapter、ComfyUI Adapter 与 Tool，再实现 Agent Runtime、FastAPI、Electron Main/Preload 和 Renderer。
+3. 自内向外实现 Ark Provider Adapter、ComfyUI Adapter 与 Tool，再实现 Agent Runtime、FastAPI 和 `local-agent-client`；只在需要桌面权限时实现 Electron Main/Preload 的具名 IPC。
 4. 为新增边界补充最小自动化测试：契约、错误路径和流式结束路径。
 5. 在目标资源基线上验证，记录实测限制，不以未验证的性能作承诺。
 
 ## 协议要求
 
-- Renderer 只能通过 Preload 提供的 API 访问 Main。
-- 未来 Main 与 FastAPI 的流式数据保持标准 SSE（`text/event-stream`）语义直到消费边界；当前没有流式端点。
+- Renderer 只能通过 Preload 提供的 API 访问 Main；普通业务 API、Run、Artifact 与 SSE 不经 Bridge。
+- 首个直接本地 API 前，打包 Renderer 必须改用 `museworks://app` 自定义安全协议，开发态固定为 `http://127.0.0.1:5173`；CSP 仅增加 `connect-src http://127.0.0.1:8765`；FastAPI CORS 仅允许这两个固定 origin，不用 `*` 或凭据。上述配置当前均未实现。
+- 未来 Renderer 与 FastAPI 的流式数据保持标准 SSE（`text/event-stream`）语义直到消费边界；当前没有流式端点。
 - SSE 事件必须有显式事件类型和结构化数据；错误与完成也必须是事件，禁止依赖断流、NDJSON、逐行 JSON 或自定义分隔符推断。
 - Agent Runtime 通过模型 Provider Adapter 调用 Ark，并通过 Tool 调用 ComfyUI Adapter，不直接依赖两者的具体协议。
 - Ark 计划使用 `Doubao-Seed-2.1-turbo` 与 `https://ark.cn-beijing.volces.com/api/plan/v3`，但当前没有调用实现，也没有提交 API Key。

@@ -7,12 +7,14 @@ The repository manifests and lockfiles win over generic or newer examples. Curre
 Reject or isolate advice that depends on:
 
 - Next.js, React Server Components, SSR, or server-only React APIs;
-- direct network access from the Electron Renderer;
+- Renderer 访问外部网络、任意非 `http://127.0.0.1:8765/v1/**` 的 loopback 地址，或在 `apps/desktop/src/renderer/lib/local-agent-client.ts` 之外使用网络 API；
 - pnpm v11 configuration semantics;
 - Turbo future flags, experimental boundaries, or commands unavailable in 2.2.3;
 - FastAPI APIs absent from 0.116.x, including examples that require upgrading FastAPI;
 - JSON Lines, NDJSON, custom delimiters, or connection-close completion;
 - `nodeIntegration: true`, disabled sandbox/context isolation, a generic IPC proxy, arbitrary file/network/process access, or Renderer-visible secrets.
+
+The sole future local-service exception is deliberately narrow: `apps/desktop/src/renderer/lib/local-agent-client.ts` may use browser-native `fetch` and `EventSource` for ordinary Agent API, Artifact, and standard SSE requests to `http://127.0.0.1:8765/v1/**`. Route this exact path as an Electron boundary that requires `museworks-electron-best-practices`, not FastAPI guidance. It does not authorize network libraries, WebSocket, `XMLHttpRequest`, `sendBeacon`, ComfyUI access, or a generic Preload/Main proxy. Before the first API is implemented, require the approved custom protocol, restrictive CSP, exact CORS, and tested standard-SSE prerequisites recorded in ADR-0004.
 
 ## Candidate status
 

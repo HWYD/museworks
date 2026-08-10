@@ -89,14 +89,17 @@
 
 ## 分层红线
 
-规则：固定调用方向是 Renderer 到 Preload 到 Electron Main 到 FastAPI 到 Agent Runtime 到 Tool 到 ComfyUI Adapter。
-规则：Renderer 只处理界面与交互。
+规则：普通业务固定调用方向是 Renderer 到 FastAPI 到 Agent Runtime 到 Tool 到 ComfyUI Adapter。
+规则：`local-agent-client` 只是 Renderer 内部未来集中封装本地服务请求的文件，不是跨边界架构层。
+规则：桌面特权固定调用方向是 Renderer 到 Preload 到 Electron Main 到 OS、safeStorage 或 Sidecar。
+规则：Renderer 处理界面、交互与受限的本机 Agent 服务调用；Bridge 是桌面特权安全边界，不是桌面前端访问本机服务的必经层。
 规则：Renderer 不得直接访问 Node。
 规则：Renderer 不得直接访问文件、环境变量、密钥或 ComfyUI。
-规则：Renderer 不得直接访问后端 HTTP。
+规则：仅未来的 `apps/desktop/src/renderer/lib/local-agent-client.ts` 可以用浏览器原生 fetch 与 EventSource 访问 `http://127.0.0.1:8765/v1/**` 的普通 Agent API、Artifact 或标准 SSE；本次不得创建该文件或实现 API。
+规则：Renderer 不得访问外部网络、任意其他 loopback 端口、网络客户端库、WebSocket、XMLHttpRequest 或 sendBeacon。
 规则：Preload 仅用 contextBridge 暴露最小具名类型化 API。
 规则：Preload 不得泄露通用 ipcRenderer。
-规则：Electron Main 是桌面权限和受控 IPC 的边界。
+规则：Electron Main 是桌面权限和受控 IPC 的边界，不得成为通用 HTTP 转发代理。
 规则：FastAPI 是本地服务契约边界。
 规则：Agent Runtime 编排 Agent。
 规则：Tool 表达能力。
@@ -123,6 +126,7 @@
 规则：BrowserWindow 保持 nodeIntegration: false。
 规则：IPC 使用 allowlist、具名 handler 与输入校验。
 规则：禁止通用 IPC 转发代理。
+规则：普通本机 Agent API、Run、Artifact 与 SSE 不经 Preload 或 Main 转发；文件选择、系统文件打开、密钥、安全存储、Sidecar 生命周期及其他桌面权限必须经 Bridge。
 规则：Ark API Key 可由 Electron Main 使用 safeStorage 加密持久化，并仅通过受控内存或匿名管道交给本地 Python 服务使用。
 规则：Python 服务不得持久化、记录或回传 Ark API Key；凭据不得进入 renderer 或 preload。
 规则：凭据不得进入日志、错误、遥测或测试夹具。

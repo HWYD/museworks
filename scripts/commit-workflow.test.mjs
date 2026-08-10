@@ -36,7 +36,7 @@ test('configures an emoji-assisted commit wizard after the staged index gate', a
   assert.equal(manifest.scripts.commit, 'node scripts/prepare-commit.mjs && git-cz');
   assert.equal(manifest.scripts['lint-staged'], 'lint-staged');
   assert.equal(manifest.scripts.commitlint, 'commitlint');
-  assert.deepEqual(manifest['lint-staged']['*.{js,mjs,ts,tsx}'], [
+  assert.deepEqual(manifest['lint-staged']['{apps,packages,scripts}/**/*.{js,mjs,ts,tsx}'], [
     'eslint --max-warnings=0 --fix',
     'prettier --write',
   ]);
@@ -128,6 +128,7 @@ test('lint-staged formats and re-stages a temporary repository file', async (con
   const directory = await createRepository(context);
   const relativePath = 'format.md';
   const filePath = await stageFile(directory, relativePath, '# title\n\n-   one\n');
+  await stageFile(directory, '.agents/skills/example/scripts/invalid.mjs', 'const = ;\n');
   const lintStagedCli = join(process.cwd(), 'node_modules', 'lint-staged', 'bin', 'lint-staged.js');
   const localBin = join(process.cwd(), 'node_modules', '.bin');
   const result = spawnSync(
@@ -163,7 +164,7 @@ test('rejects staged renderer violations even when the worktree is changed back'
   );
 });
 
-test('rejects staged Skill governance violations even when the worktree is changed back', async (context) => {
+test('does not apply Skill governance validation to staged changes', async (context) => {
   const { verifyStagedChanges } = await import('./verify-staged-changes.mjs');
   const directory = await createRepository(context);
   await cp('.agents', join(directory, '.agents'), { recursive: true });
@@ -179,7 +180,15 @@ test('rejects staged Skill governance violations even when the worktree is chang
   runGit(directory, ['add', '--', '.agents/skills-manifest.yaml']);
   await writeFile(manifestPath, validManifest, 'utf8');
 
-  assert.throws(() => verifyStagedChanges({ cwd: directory }), /schemaVersion must be 1/);
+  assert.doesNotThrow(() => verifyStagedChanges({ cwd: directory }));
+});
+test('accepts a complete valid staged Skill governance directory', async (context) => {
+  const { verifyStagedChanges } = await import('./verify-staged-changes.mjs');
+  const directory = await createRepository(context);
+  await cp('.agents', join(directory, '.agents'), { recursive: true });
+  runGit(directory, ['add', '--', '.agents']);
+
+  assert.doesNotThrow(() => verifyStagedChanges({ cwd: directory }));
 });
 
 test('rejects staged whitespace errors and accepts safe staged content', async (context) => {

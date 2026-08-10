@@ -43,7 +43,7 @@ pnpm dev:server
 pnpm dev:desktop
 ```
 
-`pnpm dev` 由 Turbo 并发启动 Electron Forge/Vite 与 Uvicorn/FastAPI；两个任务没有启动顺序或就绪等待。Electron Main 当前不等待、探测或管理 FastAPI。默认 health 地址是 `http://127.0.0.1:8765/v1/health`；可在启动前用 `MUSEWORKS_AGENT_PORT` 将服务端口覆盖为 `1..65535` 的 ASCII 十进制值。对上述根命令按 Ctrl+C 是正常的开发关闭方式。
+`pnpm dev` 由 Turbo 并发启动 Electron Forge/Vite 与 Uvicorn/FastAPI；两个任务没有启动顺序或就绪等待。Electron Main 当前不等待、探测或管理 FastAPI。全栈联调固定使用 `http://127.0.0.1:8765/v1/health`，Turbo 不会向该任务传递 `MUSEWORKS_AGENT_PORT`。只有独立服务入口 `pnpm dev:server` 支持在启动前用 `MUSEWORKS_AGENT_PORT` 覆盖端口为 `1..65535` 的 ASCII 十进制值；该覆盖端口不承诺可被 Renderer 使用。对上述根命令按 Ctrl+C 是正常的开发关闭方式。
 
 进入 Python workspace 的根 pnpm 命令会通过项目启动器解析 uv，不要求当前 shell 预先成功运行 `uv --version`。如果 `PATH` 和 Windows 官方默认目录都找不到 uv，命令会给出包含要求版本与官方安装文档的可操作错误。
 
@@ -81,17 +81,20 @@ node scripts/verify-packaged-asar.mjs
 
 ## 架构边界
 
-当前桌面调用链止于：
+当前桌面特权调用链止于：
 
 ```text
 Renderer → Preload → Electron Main
 ```
 
-FastAPI health 服务目前独立存在，Electron Main 尚未连接它。批准的未来完整方向是：
+FastAPI health 服务目前独立存在，Electron Main 尚未连接它。批准的未来方向分为两条受控通道：
 
 ```text
-Renderer → Preload → Electron Main → FastAPI → Agent Runtime → Tool → ComfyUI Adapter
+普通业务：Renderer → FastAPI → Agent Runtime → Tool → ComfyUI Adapter
+桌面特权：Renderer → Preload → Electron Main → OS / safeStorage / Sidecar
 ```
+
+首个业务 API 实现时才会创建 Renderer 内部的 `local-agent-client` 以集中封装请求；它不是额外的架构层。当前没有 Renderer 到 FastAPI 的调用、`/v1/run`、Artifact API、CORS、CSP `connect-src` 放宽或自定义协议。届时该专用文件才可访问固定本地地址 `http://127.0.0.1:8765/v1/**`，不得连接外部网络、任意 loopback 端口或 ComfyUI。文件选择、系统文件打开、密钥、安全存储、Sidecar 生命周期与其他桌面权限继续经 Preload/Main 的具名 IPC；Bridge 不是通用 HTTP 转发器。
 
 未来 Ark Provider Adapter 计划使用 `Doubao-Seed-2.1-turbo` 与 `https://ark.cn-beijing.volces.com/api/plan/v3`。仓库未提交 API Key；后续密钥实现必须遵守 Electron Main 的受控存储边界。
 

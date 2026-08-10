@@ -14,7 +14,7 @@
   },
   "scripts": {
     "dev": "turbo run dev",
-    "dev:server": "turbo run dev --filter=@museworks/agent-service",
+    "dev:server": "turbo run dev:standalone --filter=@museworks/agent-service",
     "dev:desktop": "turbo run dev --filter=@museworks/desktop",
     "lint": "turbo run lint",
     "format:check": "prettier --check package.json pnpm-workspace.yaml turbo.json tsconfig.json eslint.config.mjs .prettierrc.json AGENTS.md \".agents/**/*.{md,yaml,yml}\" \"apps/**/*.{json,ts,tsx,css,html}\" \"packages/**/*.{json,ts,tsx}\" \"scripts/**/*.{js,mjs,ts}\" \".github/workflows/**/*.{yml,yaml}\" README.md docs/architecture/development-workflow.md docs/architecture/skill-governance.md",
@@ -31,7 +31,7 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,mjs,ts,tsx}": [
+    "{apps,packages,scripts}/**/*.{js,mjs,ts,tsx}": [
       "eslint --max-warnings=0 --fix",
       "prettier --write"
     ],
