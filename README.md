@@ -1,18 +1,21 @@
 # Museworks
 
-Museworks 当前是一个可运行、可测试的本地优先桌面生图 Agent 工程骨架，还不是可生图的产品。仓库目前只实现了两条最小能力：Electron/React 壳通过类型化 IPC 展示应用版本、平台和架构；FastAPI 服务提供 `GET /v1/health` 健康契约。
+Museworks 当前是一个可运行、可测试的本地优先桌面生图 Agent 工作区基线，还不是可真实生图的产品。当前桌面端提供用户明确选择的本地创作工作区、最近工作区记录，以及由 Mock CreativeRun 和 Mock Artifact 驱动的创作界面；FastAPI 服务仍只提供 `GET /v1/health` 健康契约。
 
 ## 当前可用能力
 
 - Electron 43.2.0、React 19.2.4 和 TypeScript 5.9.3 桌面壳。
-- `window.museworks.app.getInfo()` 是 Renderer 唯一的 Bootstrap bridge。
+- 首次启动显示 Workspace Picker；用户只能通过系统原生目录选择器选择已有目录。
+- `window.museworks.workspace` 只暴露加载最近工作区、选择本地目录和按工作区 id 激活最近项三项类型化能力。最近记录保存在 Electron `userData` 下的 JSON，不使用 SQLite。
+- 三栏 Creative Workspace 支持 Empty、Generating、Complete 和 Error Mock 状态；当前不生成、保存或读取真实图片。
+- `window.museworks.app.getInfo()` 保留为版本、平台和架构信息能力。
 - Electron Main 固定启用 `contextIsolation` 与 `sandbox`，并关闭 `nodeIntegration`。
 - FastAPI `/v1/health` 返回版本化的服务状态。
 - pnpm/Turbo、ESLint、Prettier、Vitest、pytest 和 Renderer 边界扫描。
 - Superpowers 主流程、项目级 Skill 路由、固定 SHA 的上游 Skill 清单和路由回归门禁。
 - Electron Forge + Vite 是唯一桌面构建路径。项目源码、配置和直接依赖不使用 Webpack；Forge CLI 可能携带未使用的模板传递依赖。
 
-当前没有 `/v1/run`、图像生成、Ark 调用、Deep Agents 运行时、ComfyUI 适配器、模型下载、密钥界面或流式端点。
+当前没有 `/v1/run`、真实图像生成、Ark 调用、Deep Agents 运行时、ComfyUI 适配器、模型下载、密钥界面、Artifact 持久化或流式端点。
 
 ## 环境与安装
 
@@ -81,13 +84,15 @@ node scripts/verify-packaged-asar.mjs
 
 ## 架构边界
 
-当前桌面特权调用链止于：
+当前桌面特权调用链为：
 
 ```text
 Renderer → Preload → Electron Main
 ```
 
-FastAPI health 服务目前独立存在，Electron Main 尚未连接它。批准的未来方向分为两条受控通道：
+目录选择和最近工作区元数据经上面的桌面特权通道处理；Renderer 不获得 fs、path、Node 或通用 IPC。`Workspace.rootPath` 仅会在用户明确选择目录、Main 规范化并确认其为目录后，经具名 Workspace IPC 返回给 Renderer。
+
+FastAPI health 服务目前仍独立存在，Electron Main 不连接它。批准的未来方向分为两条受控通道：
 
 ```text
 普通业务：Renderer → FastAPI → Agent Runtime → Tool → ComfyUI Adapter
