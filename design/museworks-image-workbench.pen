@@ -571,53 +571,11 @@
               "gap": 28,
               "children": [
                 {
-                  "type": "frame",
-                  "id": "tFJCi",
-                  "name": "Project",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 6,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "f7yUA",
-                      "name": "Project Title",
-                      "gap": 10,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "o1SsT",
-                          "name": "Folder Icon",
-                          "width": 22,
-                          "height": 22,
-                          "icon": "folder",
-                          "library": "lucide",
-                          "fill": "#F59E0B"
-                        },
-                        {
-                          "type": "text",
-                          "id": "I8DOr",
-                          "name": "Folder Name",
-                          "fill": "$mw-foreground",
-                          "content": "summer-coffee",
-                          "fontFamily": "$mw-font",
-                          "fontSize": 17,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "Ft5J8",
-                      "name": "Folder Path",
-                      "fill": "$mw-muted-foreground",
-                      "content": "D:\\MuseWorks\\summer-coffee",
-                      "fontFamily": "$mw-font",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
+                  "id": "t5la3",
+                  "type": "ref",
+                  "ref": "vhyWd",
+                  "name": "Workspace Switcher",
+                  "width": "fill_container"
                 },
                 {
                   "id": "Ip4xU",
@@ -709,21 +667,6 @@
               "layout": "vertical",
               "gap": 8,
               "children": [
-                {
-                  "id": "JXgfr",
-                  "type": "ref",
-                  "ref": "uUmDl",
-                  "name": "Open Workspace",
-                  "width": "fill_container",
-                  "descendants": {
-                    "RnNcY": {
-                      "icon": "folder-open"
-                    },
-                    "GtuYA": {
-                      "content": "打开工作区"
-                    }
-                  }
-                },
                 {
                   "id": "iUCvG",
                   "type": "ref",
@@ -1201,53 +1144,11 @@
               "gap": 28,
               "children": [
                 {
-                  "type": "frame",
-                  "id": "vdiAv",
-                  "name": "Project",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 6,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "UH4RK",
-                      "name": "Project Title",
-                      "gap": 10,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "d7eLc2",
-                          "name": "Folder Icon",
-                          "width": 22,
-                          "height": 22,
-                          "icon": "folder",
-                          "library": "lucide",
-                          "fill": "#F59E0B"
-                        },
-                        {
-                          "type": "text",
-                          "id": "RwiFm",
-                          "name": "Folder Name",
-                          "fill": "$mw-foreground",
-                          "content": "summer-coffee",
-                          "fontFamily": "$mw-font",
-                          "fontSize": 17,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "kaErc",
-                      "name": "Folder Path",
-                      "fill": "$mw-muted-foreground",
-                      "content": "D:\\MuseWorks\\summer-coffee",
-                      "fontFamily": "$mw-font",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
+                  "id": "vQ5vO",
+                  "type": "ref",
+                  "ref": "vhyWd",
+                  "name": "Workspace Switcher",
+                  "width": "fill_container"
                 },
                 {
                   "id": "Ctn1P",
@@ -1339,21 +1240,6 @@
               "layout": "vertical",
               "gap": 8,
               "children": [
-                {
-                  "id": "KHZEi",
-                  "type": "ref",
-                  "ref": "uUmDl",
-                  "name": "Open Workspace",
-                  "width": "fill_container",
-                  "descendants": {
-                    "RnNcY": {
-                      "icon": "folder-open"
-                    },
-                    "GtuYA": {
-                      "content": "打开工作区"
-                    }
-                  }
-                },
                 {
                   "id": "vFzS3",
                   "type": "ref",
@@ -1845,53 +1731,11 @@
               "gap": 28,
               "children": [
                 {
-                  "type": "frame",
-                  "id": "V20m7L",
-                  "name": "Project",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 6,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "B3Z22",
-                      "name": "Project Title",
-                      "gap": 10,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "XDdCY",
-                          "name": "Folder Icon",
-                          "width": 22,
-                          "height": 22,
-                          "icon": "folder",
-                          "library": "lucide",
-                          "fill": "#F59E0B"
-                        },
-                        {
-                          "type": "text",
-                          "id": "yb1G0",
-                          "name": "Folder Name",
-                          "fill": "$mw-foreground",
-                          "content": "summer-coffee",
-                          "fontFamily": "$mw-font",
-                          "fontSize": 17,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "g0B0vc",
-                      "name": "Folder Path",
-                      "fill": "$mw-muted-foreground",
-                      "content": "D:\\MuseWorks\\summer-coffee",
-                      "fontFamily": "$mw-font",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
+                  "id": "B9dzWF",
+                  "type": "ref",
+                  "ref": "vhyWd",
+                  "name": "Workspace Switcher",
+                  "width": "fill_container"
                 },
                 {
                   "id": "xhz7r",
@@ -1983,21 +1827,6 @@
               "layout": "vertical",
               "gap": 8,
               "children": [
-                {
-                  "id": "QX6Pp",
-                  "type": "ref",
-                  "ref": "uUmDl",
-                  "name": "Open Workspace",
-                  "width": "fill_container",
-                  "descendants": {
-                    "RnNcY": {
-                      "icon": "folder-open"
-                    },
-                    "GtuYA": {
-                      "content": "打开工作区"
-                    }
-                  }
-                },
                 {
                   "id": "RiAgO",
                   "type": "ref",
@@ -2521,53 +2350,11 @@
               "gap": 28,
               "children": [
                 {
-                  "type": "frame",
-                  "id": "Wk8g6",
-                  "name": "Project",
-                  "width": "fill_container",
-                  "layout": "vertical",
-                  "gap": 6,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "T5gD1",
-                      "name": "Project Title",
-                      "gap": 10,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "Llxgl",
-                          "name": "Folder Icon",
-                          "width": 22,
-                          "height": 22,
-                          "icon": "folder",
-                          "library": "lucide",
-                          "fill": "#F59E0B"
-                        },
-                        {
-                          "type": "text",
-                          "id": "TRNIe",
-                          "name": "Folder Name",
-                          "fill": "$mw-foreground",
-                          "content": "summer-coffee",
-                          "fontFamily": "$mw-font",
-                          "fontSize": 17,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "kXDiF",
-                      "name": "Folder Path",
-                      "fill": "$mw-muted-foreground",
-                      "content": "D:\\MuseWorks\\summer-coffee",
-                      "fontFamily": "$mw-font",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    }
-                  ]
+                  "id": "SXpZJ",
+                  "type": "ref",
+                  "ref": "vhyWd",
+                  "name": "Workspace Switcher",
+                  "width": "fill_container"
                 },
                 {
                   "id": "UPexp",
@@ -2659,21 +2446,6 @@
               "layout": "vertical",
               "gap": 8,
               "children": [
-                {
-                  "id": "Q4s2s4",
-                  "type": "ref",
-                  "ref": "uUmDl",
-                  "name": "Open Workspace",
-                  "width": "fill_container",
-                  "descendants": {
-                    "RnNcY": {
-                      "icon": "folder-open"
-                    },
-                    "GtuYA": {
-                      "content": "打开工作区"
-                    }
-                  }
-                },
                 {
                   "id": "pwe45",
                   "type": "ref",
@@ -3192,6 +2964,625 @@
                   ]
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "jFs8N",
+      "x": 1200,
+      "y": 0,
+      "name": "Workspace / Components",
+      "clip": true,
+      "width": 640,
+      "height": 560,
+      "fill": "$mw-canvas",
+      "layout": "vertical",
+      "gap": 24,
+      "padding": 32,
+      "children": [
+        {
+          "type": "frame",
+          "id": "ttl5D",
+          "name": "Header",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "text",
+              "id": "Je0R0",
+              "name": "Title",
+              "fill": "$mw-foreground",
+              "content": "工作区入口组件",
+              "fontFamily": "$mw-font",
+              "fontSize": 22,
+              "fontWeight": "700"
+            },
+            {
+              "type": "text",
+              "id": "PchLV",
+              "name": "Description",
+              "fill": "$mw-muted-foreground",
+              "content": "首次选择与工作台内切换使用同一组工作区信息。",
+              "fontFamily": "$mw-font",
+              "fontSize": 13,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "vhyWd",
+          "name": "Workspace Switcher",
+          "reusable": true,
+          "width": 260,
+          "fill": "$mw-surface",
+          "layout": "vertical",
+          "gap": 6,
+          "children": [
+            {
+              "type": "frame",
+              "id": "X7Hxs",
+              "name": "Workspace Header",
+              "width": "fill_container",
+              "gap": 10,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Abuw3",
+                  "name": "Workspace Identity",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "p7qvsl",
+                      "name": "Folder Icon",
+                      "width": 22,
+                      "height": 22,
+                      "icon": "folder",
+                      "library": "lucide",
+                      "fill": "#F59E0B"
+                    },
+                    {
+                      "type": "text",
+                      "id": "i4otV1",
+                      "name": "Workspace Name",
+                      "fill": "$mw-foreground",
+                      "content": "summer-coffee",
+                      "fontFamily": "$mw-font",
+                      "fontSize": 17,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "icon",
+                  "id": "k0mar",
+                  "name": "Chevron",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "chevron-down",
+                  "library": "lucide",
+                  "fill": "$mw-muted-foreground"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "PXKTy",
+              "name": "Workspace Path",
+              "fill": "$mw-muted-foreground",
+              "content": "D:\\MuseWorks\\summer-coffee",
+              "fontFamily": "$mw-font",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "sRf4w",
+          "name": "Workspace Switcher Menu",
+          "reusable": true,
+          "width": 360,
+          "fill": "$mw-surface",
+          "cornerRadius": 10,
+          "stroke": "$mw-border",
+          "strokeWidth": 1,
+          "strokeAlignment": "inner",
+          "layout": "vertical",
+          "gap": 8,
+          "padding": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "KxRD1",
+              "name": "Menu Title",
+              "fill": "$mw-muted-foreground",
+              "content": "切换工作区",
+              "fontFamily": "$mw-font",
+              "fontSize": 13,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "QphyZ",
+              "name": "Current Workspace",
+              "width": "fill_container",
+              "fill": "$mw-primary-soft",
+              "cornerRadius": "$mw-radius",
+              "layout": "vertical",
+              "gap": 3,
+              "padding": [
+                10,
+                12
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "l4suSv",
+                  "name": "Name",
+                  "fill": "$mw-foreground",
+                  "content": "summer-coffee",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "v2TAFd",
+                  "name": "Path",
+                  "fill": "$mw-muted-foreground",
+                  "content": "D:\\MuseWorks\\summer-coffee",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "IqFo7",
+              "name": "Recent Workspace",
+              "width": "fill_container",
+              "fill": "$mw-surface",
+              "cornerRadius": "$mw-radius",
+              "layout": "vertical",
+              "gap": 3,
+              "padding": [
+                10,
+                12
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "YJLqv",
+                  "name": "Name",
+                  "fill": "$mw-foreground",
+                  "content": "product-shoots",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "EvkhP",
+                  "name": "Path",
+                  "fill": "$mw-muted-foreground",
+                  "content": "D:\\MuseWorks\\product-shoots",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "rectangle",
+              "id": "FCUto",
+              "name": "Divider",
+              "fill": "$mw-border",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "pA1lt",
+              "name": "Menu Actions",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "tnjC5",
+                  "name": "Open Other Workspace",
+                  "width": "fill_container",
+                  "cornerRadius": "$mw-radius",
+                  "gap": 10,
+                  "padding": [
+                    8,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "HY4Ii",
+                      "name": "Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "folder-open",
+                      "library": "lucide",
+                      "fill": "$mw-muted-foreground"
+                    },
+                    {
+                      "type": "text",
+                      "id": "P5Vuw",
+                      "name": "Label",
+                      "fill": "$mw-foreground",
+                      "content": "打开其他工作区",
+                      "fontFamily": "$mw-font",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "k3Wvz",
+                  "name": "New Workspace",
+                  "width": "fill_container",
+                  "cornerRadius": "$mw-radius",
+                  "gap": 10,
+                  "padding": [
+                    8,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "m771i",
+                      "name": "Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "plus",
+                      "library": "lucide",
+                      "fill": "$mw-muted-foreground"
+                    },
+                    {
+                      "type": "text",
+                      "id": "PQWZZ",
+                      "name": "Label",
+                      "fill": "$mw-foreground",
+                      "content": "新建工作区",
+                      "fontFamily": "$mw-font",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "u4ZSia",
+      "x": 6240,
+      "y": 940,
+      "name": "Screen / Workspace Picker",
+      "clip": true,
+      "width": 1440,
+      "height": 1024,
+      "fill": "$mw-canvas",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "R9c2YT",
+          "x": 440,
+          "y": 250,
+          "name": "Workspace Picker Content",
+          "width": 560,
+          "layout": "vertical",
+          "gap": 28,
+          "children": [
+            {
+              "type": "frame",
+              "id": "teH4g",
+              "name": "Brand",
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ehoIc",
+                  "name": "Brand Mark",
+                  "width": 32,
+                  "height": 32,
+                  "fill": "$mw-primary",
+                  "cornerRadius": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center"
+                },
+                {
+                  "type": "icon",
+                  "id": "a3megi",
+                  "name": "Brand Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "sparkles",
+                  "library": "lucide",
+                  "fill": "$mw-primary-foreground"
+                },
+                {
+                  "type": "text",
+                  "id": "mwj9I",
+                  "name": "Brand Name",
+                  "fill": "$mw-foreground",
+                  "content": "Museworks",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 18,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "RfmX1",
+              "name": "Welcome Header",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Cmaee",
+                  "name": "Title",
+                  "fill": "$mw-foreground",
+                  "content": "选择一个工作区开始创作",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 30,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "URrQM",
+                  "name": "Description",
+                  "fill": "$mw-muted-foreground",
+                  "content": "工作区会整理你的创作、参数和生成结果。",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "e8j2m",
+              "name": "Workspace Picker Card",
+              "width": "fill_container",
+              "fill": "$mw-surface",
+              "cornerRadius": 12,
+              "stroke": "$mw-border",
+              "strokeWidth": 1,
+              "strokeAlignment": "inner",
+              "layout": "vertical",
+              "gap": 20,
+              "padding": 24,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "xpxou",
+                  "name": "Recent Title",
+                  "fill": "$mw-foreground",
+                  "content": "最近使用",
+                  "fontFamily": "$mw-font",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "kFXZm",
+                  "name": "Recent Workspaces",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "n5TrqV",
+                      "name": "Workspace / summer-coffee",
+                      "width": "fill_container",
+                      "fill": "$mw-primary-soft",
+                      "cornerRadius": 10,
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ZO528",
+                          "name": "Folder Icon",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "folder",
+                          "library": "lucide",
+                          "fill": "#F59E0B"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "pnay5",
+                          "name": "Copy",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dHNhk",
+                              "name": "Name",
+                              "fill": "$mw-foreground",
+                              "content": "summer-coffee",
+                              "fontFamily": "$mw-font",
+                              "fontSize": 15,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "j6oqK",
+                              "name": "Path",
+                              "fill": "$mw-muted-foreground",
+                              "content": "D:\\MuseWorks\\summer-coffee",
+                              "fontFamily": "$mw-font",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "iCF1q",
+                          "name": "Last Used",
+                          "fill": "$mw-primary",
+                          "content": "上次打开",
+                          "fontFamily": "$mw-font",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vgsDh",
+                      "name": "Workspace / product-shoots",
+                      "width": "fill_container",
+                      "fill": "$mw-surface",
+                      "cornerRadius": 10,
+                      "stroke": "$mw-border",
+                      "strokeWidth": 1,
+                      "strokeAlignment": "inner",
+                      "gap": 12,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "n2wMIz",
+                          "name": "Folder Icon",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "folder",
+                          "library": "lucide",
+                          "fill": "$mw-muted-foreground"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "agXWO",
+                          "name": "Copy",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NVf5m",
+                              "name": "Name",
+                              "fill": "$mw-foreground",
+                              "content": "product-shoots",
+                              "fontFamily": "$mw-font",
+                              "fontSize": 15,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "PIAve",
+                              "name": "Path",
+                              "fill": "$mw-muted-foreground",
+                              "content": "D:\\MuseWorks\\product-shoots",
+                              "fontFamily": "$mw-font",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "nBzu0",
+                  "name": "Divider",
+                  "fill": "$mw-border",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "pjZFo",
+                  "name": "Actions",
+                  "width": "fill_container",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "id": "D29ll",
+                      "type": "ref",
+                      "ref": "WZSPG",
+                      "name": "Open Existing Workspace",
+                      "width": "fill_container",
+                      "descendants": {
+                        "z7FUpJ": {
+                          "icon": "folder-open"
+                        },
+                        "vEKEK": {
+                          "content": "打开现有工作区"
+                        }
+                      }
+                    },
+                    {
+                      "id": "LIjPq",
+                      "type": "ref",
+                      "ref": "Zapde",
+                      "name": "Create Workspace",
+                      "width": "fill_container",
+                      "descendants": {
+                        "U2xyg": {
+                          "icon": "plus"
+                        },
+                        "p9Gn97": {
+                          "content": "新建工作区"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "lO2ED",
+              "name": "Help Text",
+              "fill": "$mw-muted-foreground",
+              "content": "选择后会进入工作区内的 AI 生图工作台。",
+              "fontFamily": "$mw-font",
+              "fontSize": 12,
+              "fontWeight": "normal"
             }
           ]
         }
