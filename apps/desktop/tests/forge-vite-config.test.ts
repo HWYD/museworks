@@ -75,10 +75,12 @@ describe('Electron Forge Vite configuration', () => {
     );
   });
 
-  it('uses the React renderer plugin and package-root HTML entry', () => {
+  it('uses the React and Tailwind renderer plugins with the component alias', () => {
     const source = readFileSync(new URL('../vite.renderer.config.ts', import.meta.url), 'utf8');
     expect(source).toMatch(/from '@vitejs\/plugin-react'/);
-    expect(source).toMatch(/plugins:\s*\[react\(\{\}\)\]/);
+    expect(source).toMatch(/from '@tailwindcss\/vite'/);
+    expect(source).toMatch(/plugins:\s*\[tailwindcss\(\), react\(\{\}\)\]/);
+    expect(source).toMatch(/'@': fileURLToPath\(new URL\('\.\/src', import\.meta\.url\)\)/);
     expect(source).not.toMatch(/rollupOptions[\s\S]*input/);
   });
 
@@ -94,5 +96,17 @@ describe('Electron Forge Vite configuration', () => {
       [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true,
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     });
+  });
+
+  it('does not schedule a second Forge package through the workspace check task', () => {
+    const turboConfig = JSON.parse(
+      readFileSync(new URL('../../../turbo.json', import.meta.url), 'utf8'),
+    ) as { tasks?: { check?: { dependsOn?: string[] } } };
+    const desktopManifest = JSON.parse(
+      readFileSync(new URL('../package.json', import.meta.url), 'utf8'),
+    ) as { scripts?: { check?: string } };
+
+    expect(turboConfig.tasks?.check?.dependsOn).not.toContain('build');
+    expect(desktopManifest.scripts?.check).toContain('pnpm build');
   });
 });

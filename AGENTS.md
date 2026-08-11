@@ -131,6 +131,7 @@
 规则：Python 服务不得持久化、记录或回传 Ark API Key；凭据不得进入 renderer 或 preload。
 规则：凭据不得进入日志、错误、遥测或测试夹具。
 规则：路径、URL、IPC 参数、模型输出和外部响应都不可信。
+规则：仅具名 Workspace IPC 可返回用户在原生目录选择器中明确选择、由 Main 规范化并验证为目录的 rootPath；该例外不授予 Renderer 文件系统、任意路径查询或通用 IPC 能力。
 规则：不得提交 .env 文件。
 规则：只允许提交 .env.example。
 规则：不得提交私钥、用户数据、导出物或模型。

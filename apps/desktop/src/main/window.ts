@@ -2,10 +2,10 @@ import type { BrowserWindowConstructorOptions } from 'electron';
 
 export function createWindowOptions(preloadPath: string): BrowserWindowConstructorOptions {
   return {
-    width: 960,
-    height: 640,
-    minWidth: 720,
-    minHeight: 480,
+    width: 1440,
+    height: 1024,
+    minWidth: 1080,
+    minHeight: 720,
     show: false,
     webPreferences: {
       contextIsolation: true,

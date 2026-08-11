@@ -15,6 +15,7 @@
 
 - 将 IPC 参数、文件路径、外部 URL、模型输出和持久化内容都当作不可信输入。
 - 对路径做规范化和允许范围检查，防止路径穿越及任意文件读写。
+- Workspace `rootPath` 仅可由 Main 通过具名 IPC 返回给 Renderer，前提是该目录由用户在原生选择器中明确选择、已规范化并确认存在；Renderer 不得将该路径回传为任意文件操作参数。
 - 对网络请求使用显式允许的端点、方法和超时；避免把用户输入直接拼入 URL 或命令。
 - Renderer 仅未来可通过 `apps/desktop/src/renderer/lib/local-agent-client.ts` 使用原生 `fetch` 与 `EventSource` 请求 `http://127.0.0.1:8765/v1/**`；不得访问外部网络、其他 loopback 地址、ComfyUI 或网络旁路 API。
 - 首个该类 API 功能前，必须为开发态 `http://127.0.0.1:5173` 与打包态 `museworks://app` 配置精确 CORS，且 CSP 只加入 `connect-src http://127.0.0.1:8765`；不得使用 CORS `*`、凭据或放宽其他 CSP、Electron 隔离设置。
